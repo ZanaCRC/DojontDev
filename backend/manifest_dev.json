@@ -1,7 +1,7 @@
 {
   "world": {
-    "class_hash": "0x2660e42e300e85d14619e31ab1c51520a98ecd6ff97accefb40b62b260aeafc",
-    "address": "0x4a8ed1a46118db416888f6b98caf1e4c64bb33a20f89d98cbc59da46856fb7e",
+    "class_hash": "0x4c60dc46a8ca8bb47675b7b914053cef769afbf0e340523187336b72bd71d1f",
+    "address": "0x7cb912d0029e3799c4b8f2253b21481b2ec814c5daf72de75164ca82e7c42a5",
     "seed": "dojo_starter",
     "name": "Dojo starter",
     "entrypoints": [
@@ -693,6 +693,22 @@
           },
           {
             "type": "function",
+            "name": "owners_count",
+            "inputs": [
+              {
+                "name": "resource",
+                "type": "core::felt252"
+              }
+            ],
+            "outputs": [
+              {
+                "type": "core::integer::u64"
+              }
+            ],
+            "state_mutability": "view"
+          },
+          {
+            "type": "function",
             "name": "is_writer",
             "inputs": [
               {
@@ -1312,12 +1328,12 @@
   },
   "contracts": [
     {
-      "address": "0x76461d50a37c5c6f8167cd14ddc641cb98b4ef608f36f67fdf6748338b2626c",
-      "class_hash": "0x3960b38c19aec8dfa20bac3625b3d63c1553601ec9db43197ed20910019f2a7",
+      "address": "0xff61cc2e7e250644335992b1acc9b86c3c14f4f732f73fbeeb7fece05badb8",
+      "class_hash": "0x47fceda9c8aad5ec28b6e1830b333c1dd49f44da9d7806e3831f2d50788d498",
       "abi": [
         {
           "type": "impl",
-          "name": "actions__ContractImpl",
+          "name": "battle_actions__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
         },
         {
@@ -1327,7 +1343,7 @@
         },
         {
           "type": "impl",
-          "name": "actions__DeployedContractImpl",
+          "name": "battle_actions__DeployedContractImpl",
           "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
@@ -1367,49 +1383,66 @@
         },
         {
           "type": "impl",
-          "name": "ActionsImpl",
-          "interface_name": "dojo_starter::systems::actions::IActions"
+          "name": "BattleActionsImpl",
+          "interface_name": "dojo_starter::systems::battle_actions::IBattleActions"
         },
         {
           "type": "enum",
-          "name": "dojo_starter::models::Direction",
+          "name": "dojo_starter::models::battle::ActionType",
           "variants": [
             {
-              "name": "Left",
+              "name": "Attack",
               "type": "()"
             },
             {
-              "name": "Right",
-              "type": "()"
-            },
-            {
-              "name": "Up",
-              "type": "()"
-            },
-            {
-              "name": "Down",
+              "name": "Defense",
               "type": "()"
             }
           ]
         },
         {
           "type": "interface",
-          "name": "dojo_starter::systems::actions::IActions",
+          "name": "dojo_starter::systems::battle_actions::IBattleActions",
           "items": [
             {
               "type": "function",
-              "name": "spawn",
-              "inputs": [],
+              "name": "create_player",
+              "inputs": [
+                {
+                  "name": "bet_amount",
+                  "type": "core::integer::u128"
+                }
+              ],
               "outputs": [],
               "state_mutability": "external"
             },
             {
               "type": "function",
-              "name": "move",
+              "name": "join_battle",
               "inputs": [
                 {
-                  "name": "direction",
-                  "type": "dojo_starter::models::Direction"
+                  "name": "battle_id",
+                  "type": "core::integer::u32"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "perform_action",
+              "inputs": [
+                {
+                  "name": "battle_id",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "action_type",
+                  "type": "dojo_starter::models::battle::ActionType"
+                },
+                {
+                  "name": "value",
+                  "type": "core::integer::u8"
                 }
               ],
               "outputs": [],
@@ -1516,7 +1549,7 @@
         },
         {
           "type": "event",
-          "name": "dojo_starter::systems::actions::actions::Event",
+          "name": "dojo_starter::systems::battle_actions::battle_actions::Event",
           "kind": "enum",
           "variants": [
             {
@@ -1533,11 +1566,12 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dojo_starter-actions",
-      "selector": "0x7a1c71029f2d0b38e3ac89b09931d08b6e48417e079c289ff19a8698d0cba33",
+      "tag": "dojo_starter-battle_actions",
+      "selector": "0x13b872fb83d8c0053213bce3fac11a43b49ba0bbe41bceade4fba168f0f6664",
       "systems": [
-        "spawn",
-        "move",
+        "create_player",
+        "join_battle",
+        "perform_action",
         "upgrade"
       ]
     }
@@ -1546,35 +1580,47 @@
   "models": [
     {
       "members": [],
-      "class_hash": "0x46d4db177d7edf355bf1e51fa72023171232b928ef3b9467dbd541611da5f83",
-      "tag": "dojo_starter-DirectionsAvailable",
-      "selector": "0x77844f1facb51e60e546a9832d56c6bd04fa23be4fd5b57290caae5e9a3c1e4"
+      "class_hash": "0x77fd0d7ad17d40c8614d7a2f259a1df2918d9631dee09c2003328bcedf28f9e",
+      "tag": "dojo_starter-Battle",
+      "selector": "0x6d5343564c7ac26fc7aa825293cc959896eeff33a3c3c4705e7f45b915aa137"
     },
     {
       "members": [],
-      "class_hash": "0x5a3dcd4bf5a0e6fff9ca88dcd77c6b49f1a33a1b9bbea8ce5aa5290e9470070",
-      "tag": "dojo_starter-Moves",
-      "selector": "0x2a29373f1af8348bd366a990eb3a342ef2cbe5e85160539eaca3441a673f468"
+      "class_hash": "0x170bf0faad09c61ce2acd350ed85c764e027b1e87455fc6eee38d397bae19e",
+      "tag": "dojo_starter-BattleAction",
+      "selector": "0x61a3674b4c756b5e12c7e8af3b3348185034e81c597480070d57a8cf4488e05"
     },
     {
       "members": [],
-      "class_hash": "0x7231f1cec2b0ba37c39e6d919d35648d07d86a687680aa92ccb0d65fe5af17e",
-      "tag": "dojo_starter-Position",
-      "selector": "0x2ac8b4c190f7031b9fc44312e6b047a1dce0b3f2957c33a935ca7846a46dd5b"
-    },
-    {
-      "members": [],
-      "class_hash": "0x4518971c1abf10a6c1c40f8f72fc34816dee4752d66f0f2b9d29a62f4fb3310",
-      "tag": "dojo_starter-PositionCount",
-      "selector": "0x44e8e8c3aea54e97e01563cacc08abb4a8ce8c468cd4d3a332bca12bfc2290d"
+      "class_hash": "0x6ed36ac9a5a90bc5cbf86c9633eadd40289adc7b63787ac3bcacd3cd4b20841",
+      "tag": "dojo_starter-Player",
+      "selector": "0x1cccb05d982525914bcdce99f0af51556dcb8d9f0e2317c0ad0221d13a809f9"
     }
   ],
   "events": [
     {
       "members": [],
-      "class_hash": "0x49f539cc331573abc29d729a65824485514906457af4049ff148ffe421520cb",
-      "tag": "dojo_starter-Moved",
-      "selector": "0x504403e5c02b6442527721fc464d9ea5fc8f1ee600ab5ccd5c0845d36fd45f1"
+      "class_hash": "0x7a8e0a4675b5db048945c8adf9dd7d49a0d794e7746bb44a25273b48efd62f3",
+      "tag": "dojo_starter-ActionPerformed",
+      "selector": "0x51cf408d82df0d57881643d5ff4d8de8697093ee998aaea2e8d04ba1276ca02"
+    },
+    {
+      "members": [],
+      "class_hash": "0x6fec30a86100691025bee150f439e18a477c0bb3b5c5b89916f08d0c79038be",
+      "tag": "dojo_starter-BattleCreated",
+      "selector": "0x1d3f6fea1354b92cfe7df2e8590d6ac611f3946ed0208318e47aa64cdc59020"
+    },
+    {
+      "members": [],
+      "class_hash": "0x46ca282d6c01599e9815a42e5de316d976bee12a1cd85441b25c3f555097f8b",
+      "tag": "dojo_starter-BattleEnded",
+      "selector": "0x7d9fb1af2cebd40edc89241e88c1b72125eefaffa94681d862f6b2b10907c52"
+    },
+    {
+      "members": [],
+      "class_hash": "0x675e0b9e8028d83097c7349492eacd32d2de7cf2869922da1491bbaeb26ec3",
+      "tag": "dojo_starter-BattleJoined",
+      "selector": "0x2149a187a4e714d1f70dc06f446021407787a21ed78012da9d5191a858299c2"
     }
   ],
   "external_contracts": []
