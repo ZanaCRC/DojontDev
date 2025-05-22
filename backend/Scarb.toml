@@ -8,9 +8,10 @@ edition = "2024_07"
 sierra-replace-ids = true
 
 [scripts]
-migrate = "sozo build && sozo migrate"                      # scarb run migrate
-spawn = "sozo execute dojo_starter-actions spawn --wait"    # scarb run spawn
-move = "sozo execute dojo_starter-actions move -c 1 --wait" # scarb run move
+migrate = "sozo build && sozo migrate"                                                         # scarb run migrate
+create_player = "sozo execute dojo_starter-battle_actions create_player --wait"                # scarb run create_player
+join_battle = "sozo execute dojo_starter-battle_actions join_battle --wait"                    # scarb run join_battle
+attack = "sozo execute dojo_starter-battle_actions perform_action --wait"                      # scarb run attack
 
 [dependencies]
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.5.0" }

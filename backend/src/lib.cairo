@@ -1,9 +1,11 @@
 pub mod systems {
-    pub mod actions;
+    pub mod battle_actions;
 }
 
-pub mod models;
+pub mod models {
+    pub mod battle;
+}
 
 pub mod tests {
-    mod test_world;
+    mod test_battle;
 }
