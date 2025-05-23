@@ -3,7 +3,7 @@ import { BattleLauncher } from "./BattleLauncher";
 export const LoginWithWallet = () => {
   return (
     <div>
-       <div className="max-w-md mx-auto mt-10 space-y-6">
+       <div className="">
         <WalletConnect />
         <BattleLauncher />
       </div>
