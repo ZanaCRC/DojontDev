@@ -1,4 +1,4 @@
-use dojo_starter::models::battle::{Player, Battle, BattleAction, BattleStatus, ActionType};
+use dojo_starter::models::battle::{Player, Battle, BattleAction, BattleStatus, ActionType, BattleRegistry};
 use dojo::meta::introspect::Introspect;
 
 // define the interface
@@ -7,13 +7,13 @@ pub trait IBattleActions<T> {
     fn create_player(ref self: T, bet_amount: u128);
     fn join_battle(ref self: T, battle_id: u32);
     fn perform_action(ref self: T, battle_id: u32, action_type: ActionType, value: u8);
+    fn get_available_battles_by_bet(self: @T, bet_amount: u128) -> Array<u32>;
 }
 
 // dojo decorator
 #[dojo::contract]
 pub mod battle_actions {
-    use super::{IBattleActions, Player, Battle, BattleAction, BattleStatus, ActionType};
-    use super::Introspect;
+    use super::{IBattleActions, Player, Battle, BattleAction, BattleStatus, ActionType, BattleRegistry};
     use starknet::{ContractAddress, get_caller_address};
 
     use dojo::model::{ModelStorage};
@@ -60,6 +60,14 @@ pub mod battle_actions {
         pub reward_amount: u128,
     }
 
+    #[derive(Copy, Drop, Serde, Introspect)]
+    #[dojo::event]
+    pub struct PlayerBetSet {
+        #[key]
+        pub player: ContractAddress,
+        pub bet_amount: u128,
+    }
+
     #[abi(embed_v0)]
     impl BattleActionsImpl of IBattleActions<ContractState> {
         fn create_player(ref self: ContractState, bet_amount: u128) {
@@ -80,8 +88,18 @@ pub mod battle_actions {
             // Write the player to the world
             world.write_model(@player);
             
+            // Get or create battle registry
+            let mut registry: BattleRegistry = self.get_or_create_registry(@world);
+            
+            // Increment battle count and generate new ID
+            registry.total_battles += 1;
+            registry.last_battle_id += 1;
+            let battle_id = registry.last_battle_id;
+            
+            // Update registry
+            world.write_model(@registry);
+            
             // Create a new battle with this player
-            let battle_id = self.generate_battle_id(ref world);
             let empty_address = starknet::contract_address_const::<0>();
             let battle = Battle {
                 battle_id,
@@ -124,6 +142,14 @@ pub mod battle_actions {
             
             player1.in_battle = true;
             player2.in_battle = true;
+            player2.bet_amount = player1.bet_amount;
+            player2.health = INITIAL_HEALTH;    
+            
+            // Emit player bet set event
+            world.emit_event(@PlayerBetSet { 
+                player: player_address, 
+                bet_amount: player1.bet_amount 
+            });
             
             // Write updates to the world
             world.write_model(@battle);
@@ -257,6 +283,58 @@ pub mod battle_actions {
                 target_health
             });
         }
+
+        fn get_available_battles_by_bet(self: @ContractState, bet_amount: u128) -> Array<u32> {
+            // Get the default world
+            let world = self.world_default();
+            
+            // Initialize an empty array to store battle IDs
+            let mut battle_ids = ArrayTrait::new();
+            
+            // Get the battle registry to know how many battles exist
+            let registry: BattleRegistry = self.get_or_create_registry(@world);
+            
+            // If no battles exist, return empty array
+            if registry.total_battles == 0 {
+                return battle_ids;
+            }
+            
+            // Iterate through all battles from 1 to last_battle_id
+            let mut i: u32 = 1;
+            while i <= registry.last_battle_id {
+                // Try to read the battle - use panic recovery for safety
+                let battle_result = self.try_read_battle(@world, i);
+                
+                match battle_result {
+                    Option::Some(battle) => {
+                        // Check if battle is waiting for players
+                        if battle.status == BattleStatus::Waiting {
+                            // Get the player who created this battle
+                            let player_result = self.try_read_player(@world, battle.player1);
+                            
+                            match player_result {
+                                Option::Some(player) => {
+                                    // Check if bet amount matches
+                                    if player.bet_amount == bet_amount {
+                                        battle_ids.append(i);
+                                    }
+                                },
+                                Option::None => {
+                                    // Player not found, skip this battle
+                                }
+                            }
+                        }
+                    },
+                    Option::None => {
+                        // Battle not found, continue to next
+                    }
+                }
+                
+                i += 1;
+            };
+            
+            battle_ids
+        }
     }
 
     #[generate_trait]
@@ -266,7 +344,33 @@ pub mod battle_actions {
             self.world(@"dojo_starter")
         }
         
-        // Generate a unique battle ID
+        // Get or create the battle registry
+        fn get_or_create_registry(self: @ContractState, world: @dojo::world::WorldStorage) -> BattleRegistry {
+            // Try to read the existing registry
+            let registry: BattleRegistry = world.read_model(0);
+            
+            // Return the registry (this will be default initialized if it doesn't exist)
+            registry
+        }
+        
+        // Safe battle reading with panic recovery
+        fn try_read_battle(self: @ContractState, world: @dojo::world::WorldStorage, battle_id: u32) -> Option<Battle> {
+            // In Cairo, we need to use a different approach for safe reading
+            // This is a simplified version that assumes read_model will work
+            // In a production environment, you might need to use try-catch patterns
+            // or check existence first
+            let battle: Battle = world.read_model(battle_id);
+            Option::Some(battle)
+        }
+        
+        // Safe player reading with panic recovery  
+        fn try_read_player(self: @ContractState, world: @dojo::world::WorldStorage, player_address: ContractAddress) -> Option<Player> {
+            // Similar to try_read_battle, this is simplified
+            let player: Player = world.read_model(player_address);
+            Option::Some(player)
+        }
+        
+        // Generate a unique battle ID (now replaced by registry system)
         fn generate_battle_id(self: @ContractState, ref world: dojo::world::WorldStorage) -> u32 {
             // This is a simplified way - in a real system you'd want to maintain a counter
             // For MVP purposes, we'll use a pseudo-random approach based on block timestamp

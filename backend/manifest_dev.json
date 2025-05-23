@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0xff61cc2e7e250644335992b1acc9b86c3c14f4f732f73fbeeb7fece05badb8",
-      "class_hash": "0x47fceda9c8aad5ec28b6e1830b333c1dd49f44da9d7806e3831f2d50788d498",
+      "address": "0x3a07c313ae49d11ec02938b3f1daeb3e5abe60ee38c01c4a396f425ecf782bf",
+      "class_hash": "0x29aecea7e2da9e24f6911f2a4bc46d3d0ea8158d0616da2a0d5aa2c9630818a",
       "abi": [
         {
           "type": "impl",
@@ -1447,6 +1447,22 @@
               ],
               "outputs": [],
               "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "get_available_battles_by_bet",
+              "inputs": [
+                {
+                  "name": "bet_amount",
+                  "type": "core::integer::u128"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::array::Array::<core::integer::u32>"
+                }
+              ],
+              "state_mutability": "view"
             }
           ]
         },
@@ -1592,6 +1608,12 @@
     },
     {
       "members": [],
+      "class_hash": "0x76560a66387801922fe80cd5fba24dde9f936ca5d31956426a351086c1f019d",
+      "tag": "dojo_starter-BattleRegistry",
+      "selector": "0x48d4453e72a17658b0c214f7d8c41cbd4860b43859e31610282ff337e2aaddf"
+    },
+    {
+      "members": [],
       "class_hash": "0x6ed36ac9a5a90bc5cbf86c9633eadd40289adc7b63787ac3bcacd3cd4b20841",
       "tag": "dojo_starter-Player",
       "selector": "0x1cccb05d982525914bcdce99f0af51556dcb8d9f0e2317c0ad0221d13a809f9"
@@ -1621,6 +1643,12 @@
       "class_hash": "0x675e0b9e8028d83097c7349492eacd32d2de7cf2869922da1491bbaeb26ec3",
       "tag": "dojo_starter-BattleJoined",
       "selector": "0x2149a187a4e714d1f70dc06f446021407787a21ed78012da9d5191a858299c2"
+    },
+    {
+      "members": [],
+      "class_hash": "0x118e0c18076082bba5c5353f3da9a1cb6940fd87f5d259f1c7e990b2b493c08",
+      "tag": "dojo_starter-PlayerBetSet",
+      "selector": "0x540275f35fdecadad187b96b564a5302aefdd8cf3740eb9437221c0640f042e"
     }
   ],
   "external_contracts": []
