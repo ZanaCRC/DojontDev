@@ -117,6 +117,17 @@ export interface BattleJoinedValue {
 	player2: string;
 }
 
+// Type definition for `dojo_starter::systems::battle_actions::battle_actions::PlayerBetSet` struct
+export interface PlayerBetSet {
+	player: string;
+	bet_amount: BigNumberish;
+}
+
+// Type definition for `dojo_starter::systems::battle_actions::battle_actions::PlayerBetSetValue` struct
+export interface PlayerBetSetValue {
+	bet_amount: BigNumberish;
+}
+
 // Type definition for `dojo_starter::models::battle::ActionType` enum
 export const actionType = [
 	'Attack',
@@ -152,6 +163,8 @@ export interface SchemaType extends ISchemaType {
 		BattleEndedValue: BattleEndedValue,
 		BattleJoined: BattleJoined,
 		BattleJoinedValue: BattleJoinedValue,
+		PlayerBetSet: PlayerBetSet,
+		PlayerBetSetValue: PlayerBetSetValue,
 	},
 }
 export const schema: SchemaType = {
@@ -253,6 +266,13 @@ export const schema: SchemaType = {
 		BattleJoinedValue: {
 			player2: "",
 		},
+		PlayerBetSet: {
+			player: "",
+			bet_amount: 0,
+		},
+		PlayerBetSetValue: {
+			bet_amount: 0,
+		},
 	},
 };
 export enum ModelsMapping {
@@ -274,4 +294,6 @@ export enum ModelsMapping {
 	BattleEndedValue = 'dojo_starter-BattleEndedValue',
 	BattleJoined = 'dojo_starter-BattleJoined',
 	BattleJoinedValue = 'dojo_starter-BattleJoinedValue',
+	PlayerBetSet = 'dojo_starter-PlayerBetSet',
+	PlayerBetSetValue = 'dojo_starter-PlayerBetSetValue',
 }
