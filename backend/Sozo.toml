@@ -1,0 +1,5 @@
+[profile.dev]
+config-path = "dojo_dev.toml"
+
+[profile.sepolia]
+config-path = "dojo_sepolia.toml" 

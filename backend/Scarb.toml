@@ -8,10 +8,17 @@ edition = "2024_07"
 sierra-replace-ids = true
 
 [scripts]
+# Local development
 migrate = "sozo build && sozo migrate"                                                         # scarb run migrate
 create_player = "sozo execute dojo_starter-battle_actions create_player --wait"                # scarb run create_player
 join_battle = "sozo execute dojo_starter-battle_actions join_battle --wait"                    # scarb run join_battle
 attack = "sozo execute dojo_starter-battle_actions perform_action --wait"                      # scarb run attack
+
+# Sepolia testnet deployment (using sozo profiles)
+migrate_sepolia = "sozo build && sozo migrate --profile sepolia"                              # scarb run migrate_sepolia
+create_player_sepolia = "sozo execute dojo_starter-battle_actions create_player --profile sepolia --wait"  # scarb run create_player_sepolia
+join_battle_sepolia = "sozo execute dojo_starter-battle_actions join_battle --profile sepolia --wait"      # scarb run join_battle_sepolia
+attack_sepolia = "sozo execute dojo_starter-battle_actions perform_action --profile sepolia --wait"        # scarb run attack_sepolia
 
 [dependencies]
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.5.0" }
@@ -22,3 +29,8 @@ build-external-contracts = ["dojo::world::world_contract::world"]
 [dev-dependencies]
 cairo_test = "=2.10.1"
 dojo_cairo_test = { git = "https://github.com/dojoengine/dojo", tag = "v1.5.0" }
+
+# Profile configurations
+[profile.dev]
+
+[profile.sepolia]
