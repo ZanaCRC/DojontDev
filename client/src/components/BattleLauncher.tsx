@@ -1,46 +1,179 @@
 // src/components/BattleLauncher.tsx
 import { useState } from "react";
-import { useAccount, useContract } from "@starknet-react/core";
-// import BattleABI from "../abi/Battle.json";
+import { useDojo } from "../hooks/useDojo";
+import { useWallet } from "../context/WalletContext";
+import { BattleActions } from "./BattleActions";
 
-export function BattleLauncher() {
-  const { address } = useAccount();
+export const BattleLauncher: React.FC = () => {
+  const { walletConnection } = useWallet();
   const [stake, setStake] = useState("0");
-  const { contract } = useContract({
-    address: "0xTU_CONTRACT_ADDRESS",
-    // abi: BattleABI,
-  });
-  const handleLaunch = async () => {
-    if (!address) return alert("Conecta tu wallet primero.");
-    if (Number(stake) <= 0) return alert("Apuesta inválida.");
-    // Llama a tu sistema create_battle en el contrato Cairo/Dojo
-    if (!contract) return alert("Contrato no cargado.");
+  const [battleId, setBattleId] = useState("");
+  const [activeBattleId, setActiveBattleId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { setup } = useDojo();
+
+  const handleCreateBattle = async () => {
+    if (!walletConnection.isConnected || !walletConnection.account) {
+      alert("Por favor, conecta tu wallet primero.");
+      return;
+    }
+    
+    if (Number(stake) <= 0) {
+      alert("La apuesta debe ser mayor que 0.");
+      return;
+    }
+
     try {
-      await contract.invoke("create_battle", [address, BigInt(stake)]);
+      setLoading(true);
+      const dojoActions = setup(walletConnection.account);
+      const result = await dojoActions.createPlayer(Number(stake));
+      console.log("Batalla creada:", result);
+      
+      // Extraer el battleId del evento BattleCreated
+      const txReceipt = result as any;
+      if (txReceipt?.events?.length > 0) {
+        const battleCreatedEvent = txReceipt.events.find(
+          (event: any) => event.keys && event.keys.includes('BattleCreated')
+        );
+        
+        if (battleCreatedEvent) {
+          const battleId = battleCreatedEvent.data[0]; // El primer dato es el battle_id
+          console.log("ID de batalla creada:", battleId);
+          setActiveBattleId(battleId.toString());
+        }
+      }
+
+      alert("¡Jugador creado y batalla iniciada con éxito!");
+      setStake("0");
     } catch (error) {
-      alert("Error al crear batalla: " + (error as Error).message);
+      console.error("Error al crear la batalla:", error);
+      alert("Error al crear la batalla: " + (error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoinBattle = async () => {
+    if (!walletConnection.isConnected || !walletConnection.account) {
+      alert("Por favor, conecta tu wallet primero.");
+      return;
+    }
+
+    if (!battleId) {
+      alert("Por favor, ingresa un ID de batalla válido.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const dojoActions = setup(walletConnection.account);
+      await dojoActions.joinBattle(Number(battleId));
+      alert("¡Te has unido a la batalla con éxito!");
+      setActiveBattleId(battleId);
+      setBattleId("");
+    } catch (error) {
+      console.error("Error al unirse a la batalla:", error);
+      alert("Error al unirse a la batalla: " + (error as Error).message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 mt-4 border rounded-xl shadow bg-white">
-      <h2 className="text-xl font-semibold mb-2">Iniciar Batalla</h2>
-      <input
-        type="number"
-        min="0"
-        placeholder="Apuesta (wei)"
-        value={stake}
-        onChange={(e) => setStake(e.target.value)}
-        className="border p-2 rounded w-full mb-3"
-      />
-      <button
-        onClick={handleLaunch}
-        className="bg-green-600 text-white px-4 py-2 rounded w-full"
-      >
-        Crear o Unirse
-      </button>
+    <div className="space-y-6 mt-10">
+      {/* Crear Batalla */}
+      <div className="p-4 border rounded-xl shadow-md border-gray-200">
+        <h2 className="text-2xl text-white font-semibold mb-4">Crear Batalla</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="stake" className="block text-sm font-medium text-gray-200 mb-1">
+              Apuesta (wei)
+            </label>
+            <input
+              id="stake"
+              type="number"
+              min="0"
+              value={stake}
+              onChange={(e) => setStake(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-200 bg-gray-700"
+              placeholder="Ingresa la cantidad a apostar"
+              disabled={loading || !walletConnection.isConnected}
+            />
+          </div>
+
+          <button
+            onClick={handleCreateBattle}
+            disabled={!walletConnection.isConnected || Number(stake) <= 0 || loading}
+            className={`
+              w-full px-4 py-2 rounded-md font-medium transition-all duration-200
+              ${!walletConnection.isConnected || Number(stake) <= 0 || loading
+                ? 'bg-gray-600 cursor-not-allowed text-gray-200'
+                : 'bg-green-500 hover:bg-green-600 active:bg-green-700 text-white'
+              }
+            `}
+          >
+            {loading 
+              ? 'Creando batalla...'
+              : !walletConnection.isConnected 
+                ? 'Conecta tu wallet primero'
+                : Number(stake) <= 0
+                  ? 'Ingresa una apuesta válida'
+                  : 'Crear Batalla'
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Unirse a Batalla */}
+      <div className="p-4 border rounded-xl shadow-md border-gray-200">
+        <h2 className="text-2xl text-white font-semibold mb-4">Unirse a Batalla</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="battleId" className="block text-sm font-medium text-gray-200 mb-1">
+              ID de Batalla
+            </label>
+            <input
+              id="battleId"
+              type="text"
+              value={battleId}
+              onChange={(e) => setBattleId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200 bg-gray-700"
+              placeholder="Ingresa el ID de la batalla"
+              disabled={loading || !walletConnection.isConnected}
+            />
+          </div>
+
+          <button
+            onClick={handleJoinBattle}
+            disabled={!walletConnection.isConnected || !battleId || loading}
+            className={`
+              w-full px-4 py-2 rounded-md font-medium transition-all duration-200
+              ${!walletConnection.isConnected || !battleId || loading
+                ? 'bg-gray-600 cursor-not-allowed text-gray-200'
+                : 'bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white'
+              }
+            `}
+          >
+            {loading 
+              ? 'Uniéndose a la batalla...'
+              : !walletConnection.isConnected 
+                ? 'Conecta tu wallet primero'
+                : !battleId
+                  ? 'Ingresa un ID de batalla'
+                  : 'Unirse a Batalla'
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Acciones de Batalla */}
+      {activeBattleId && (
+        <BattleActions battleId={activeBattleId} />
+      )}
     </div>
   );
-}
+};
 
 

@@ -1,0 +1,35 @@
+[
+  {
+    "type": "function",
+    "name": "create_battle",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "felt"
+      },
+      {
+        "name": "stake",
+        "type": "felt"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "external"
+  },
+  {
+    "type": "function",
+    "name": "get_battle_state",
+    "inputs": [
+      {
+        "name": "battle_id",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "state",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]
