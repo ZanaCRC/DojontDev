@@ -25,6 +25,15 @@ pub struct Battle {
 
 #[derive(Copy, Drop, Serde, Debug)]
 #[dojo::model]
+pub struct BattleRegistry {
+    #[key]
+    pub id: felt252, // Always 0, singleton
+    pub total_battles: u32,
+    pub last_battle_id: u32,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
 pub struct BattleAction {
     #[key]
     pub battle_id: u32,

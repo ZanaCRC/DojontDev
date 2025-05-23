@@ -28,6 +28,19 @@ export interface BattleActionValue {
 	turn: BigNumberish;
 }
 
+// Type definition for `dojo_starter::models::battle::BattleRegistry` struct
+export interface BattleRegistry {
+	id: BigNumberish;
+	total_battles: BigNumberish;
+	last_battle_id: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::battle::BattleRegistryValue` struct
+export interface BattleRegistryValue {
+	total_battles: BigNumberish;
+	last_battle_id: BigNumberish;
+}
+
 // Type definition for `dojo_starter::models::battle::BattleValue` struct
 export interface BattleValue {
 	player1: string;
@@ -126,6 +139,8 @@ export interface SchemaType extends ISchemaType {
 		Battle: Battle,
 		BattleAction: BattleAction,
 		BattleActionValue: BattleActionValue,
+		BattleRegistry: BattleRegistry,
+		BattleRegistryValue: BattleRegistryValue,
 		BattleValue: BattleValue,
 		Player: Player,
 		PlayerValue: PlayerValue,
@@ -167,6 +182,15 @@ export const schema: SchemaType = {
 				Defense: undefined, }),
 			value: 0,
 			turn: 0,
+		},
+		BattleRegistry: {
+			id: 0,
+			total_battles: 0,
+			last_battle_id: 0,
+		},
+		BattleRegistryValue: {
+			total_battles: 0,
+			last_battle_id: 0,
 		},
 		BattleValue: {
 			player1: "",
@@ -236,6 +260,8 @@ export enum ModelsMapping {
 	Battle = 'dojo_starter-Battle',
 	BattleAction = 'dojo_starter-BattleAction',
 	BattleActionValue = 'dojo_starter-BattleActionValue',
+	BattleRegistry = 'dojo_starter-BattleRegistry',
+	BattleRegistryValue = 'dojo_starter-BattleRegistryValue',
 	BattleStatus = 'dojo_starter-BattleStatus',
 	BattleValue = 'dojo_starter-BattleValue',
 	Player = 'dojo_starter-Player',
