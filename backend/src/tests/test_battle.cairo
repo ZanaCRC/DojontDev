@@ -2,7 +2,7 @@
 mod tests {
     use core::option::OptionTrait;
     use starknet::{ContractAddress, contract_address_const};
-    use dojo_starter::models::battle::{Player, Battle, BattleAction, BattleStatus, ActionType};
+    use dojontdev::models::battle::{Player, Battle, BattleAction, BattleStatus, ActionType};
 
     // Test de modelos y estructuras
     #[test]
