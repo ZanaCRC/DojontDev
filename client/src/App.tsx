@@ -1,7 +1,7 @@
 // src/App.tsx
 import { StarknetConfig, InjectedConnector, jsonRpcProvider } from '@starknet-react/core';
 import { BattleLauncher } from './components/BattleLauncher';
-import { WalletConnect } from './components/WalletConnect';
+import { ConnectWallet } from './components/Cartridge/WalletConnection';
 import { sepolia } from '@starknet-react/chains';
 import { Hero } from './components/Hero';
 import { Header } from './components/Header';
@@ -37,7 +37,7 @@ const AppContent = () => {
           <MorphingText texts={["Conectate", "Juega", "Gana","Dojon't game"]} />
         </div>
         <div className="">
-          <WalletConnect />
+          <ConnectWallet />
           {walletConnection.isConnected && <BattleLauncher />}
           <div className="flex flex-row justify-center items-center mt-20">
             <MarqueeDemo />
@@ -64,16 +64,10 @@ export function App() {
   });
 
   return (
-    <StarknetConfig 
-      connectors={connectors} 
-      chains={[sepolia]} 
-      provider={provider}
-      autoConnect
-    >
-      <WalletProvider>
+    
+
         <AppContent />
-      </WalletProvider>
-    </StarknetConfig>
+   
   );
 }
 

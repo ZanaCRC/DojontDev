@@ -16,11 +16,11 @@ export function ConnectWallet() {
   }, [address, controller])
  
   return (
-    <div>
+    <div className="controller-connect-container">
       {address && (
         <>
-          <p>Account: {address}</p>
-          {username && <p>Username: {username}</p>}
+          <p className="text-neutral-900">Account: {address}</p>
+          {username && <p className="text-neutral-900">Username: {username}</p>}
         </>
       )}
       {address ? (
