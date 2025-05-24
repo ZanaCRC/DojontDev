@@ -1,98 +1,76 @@
-import { AccountInterface, RpcProvider, Contract, Account } from "starknet";
-import type { BigNumberish, CairoCustomEnum } from "starknet";
-import { setupWorld } from "../dojo/typescript/contracts.gen";
+import { AccountInterface } from "starknet";
+import type { BigNumberish, Call } from "starknet";
 import manifest from "../json/manifest_sepolia.json";
+import { DojoProvider } from "@dojoengine/core";
 
-
-// Configuración básica para desarrollo local
-const config = {
-  rpcUrl: import.meta.env.VITE_STARKNET_RPC_URL || "https://starknet-sepolia.public.blastapi.io",
-  toriiUrl: import.meta.env.VITE_TORII_URL || "http://localhost:8080",
-  manifest: {
-    ...manifest,
-    world: {
-      ...manifest.world,
-      address: import.meta.env.VITE_WORLD_ADDRESS || manifest.world.address
-    }
-  }
-};
-
-interface ExtendedAccount extends AccountInterface {
-  provider?: RpcProvider;
-  signer: any;
+interface Contract {
+  address: string;
+  class_hash: string;
+  tag: string;
 }
 
-interface SystemInfo {
-  tag: string;
-  address: string;
-  abi: any[];
-  selector: string;
+interface BattleActionsContract extends Contract {
+  tag: "battle_actions";
 }
 
 export const useDojo = () => {
-  const rpcProvider = new RpcProvider({ nodeUrl: config.rpcUrl });
-  const worldAddress = config.manifest.world.address;
-  console.log("Usando World Address:", worldAddress);
-
-  const getExecutableAccount = async (account: ExtendedAccount) => {
+  const setup = async (controller: any) => {
     try {
-      console.log('Analizando cuenta recibida:', {
-        type: typeof account,
-        isAccount: account instanceof Account,
-        properties: Object.keys(account),
-        address: account.address,
-        hasExecute: typeof account.execute === 'function',
-        hasSigner: !!account.signer,
-        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
-      });
-
-      // Si la cuenta ya es una instancia de Account y tiene todo lo necesario
-      if (account instanceof Account && account.signer) {
-        console.log('Usando cuenta existente');
-        return account;
+      // Validar que el manifest tenga la estructura correcta
+      if (!manifest) {
+        throw new Error('El manifest no está definido');
       }
 
-      // Crear una nueva instancia de Account con los datos necesarios
-      console.log('Creando nueva instancia de Account');
-      const newAccount = new Account(
-        rpcProvider,
-        account.address,
-        account.signer
-      );
+      if (!manifest.world) {
+        throw new Error('manifest.world no está definido');
+      }
 
-      console.log('Nueva cuenta creada:', {
-        address: newAccount.address,
-        hasExecute: typeof newAccount.execute === 'function',
-        hasSigner: !!newAccount.signer,
-        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(newAccount))
-      });
+      if (!manifest.world.address) {
+        throw new Error('manifest.world.address no está definido');
+      }
 
-      return newAccount;
-    } catch (error) {
-      console.error('Error al obtener cuenta ejecutable:', error);
-      throw error;
-    }
-  };
-
-  const setup = async (account: ExtendedAccount) => {
-    try {
-      console.log('Iniciando setup con cuenta:', account);
+      // Obtener la cuenta del controlador
+      const account = await controller.account();
       
-      const executableAccount = await getExecutableAccount(account);
-      console.log('Cuenta ejecutable obtenida:', executableAccount);
+      console.log('Configurando Dojo con:', {
+        manifest: {
+          world: manifest.world,
+          worldAddress: manifest.world.address,
+          contracts: manifest.contracts
+        },
+        account: {
+          type: account?.constructor?.name,
+          methods: Object.keys(account || {}),
+          address: account?.address
+        }
+      });
 
-      // Asegurarse de que la cuenta tenga los métodos necesarios
-      if (!executableAccount.execute || !executableAccount.signer) {
-        throw new Error('La cuenta no tiene los métodos necesarios para ejecutar transacciones');
+      if (!account) {
+        throw new Error('No se pudo obtener la cuenta del controlador');
       }
 
-      // Buscar el contrato battle_actions en el manifest
-      const battleActionsContract = (manifest as any).contracts?.find((contract: any) => 
-        contract.abi.some((item: any) => 
-          item.type === "interface" && 
-          item.name === "dojo_starter::systems::battle_actions::IBattleActions"
-        )
-      );
+      // Crear el proveedor de Dojo
+      const worldAddress = manifest.world.address;
+      const toriiUrl = import.meta.env.VITE_TORII_URL || "http://localhost:8080";
+      const rpcUrl = import.meta.env.VITE_STARKNET_RPC_URL || "http://localhost:5050";
+
+      console.log('Creando DojoProvider con:', {
+        worldAddress,
+        toriiUrl,
+        rpcUrl
+      });
+
+      const dojoProvider = new DojoProvider({
+        manifest,
+        worldAddress,
+        toriiUrl,
+        rpcUrl
+      });
+
+      // Encontrar el contrato battle_actions
+      const battleActionsContract = manifest.contracts?.find(
+        c => c.tag === "battle_actions"
+      ) as BattleActionsContract;
 
       if (!battleActionsContract) {
         throw new Error('No se encontró el contrato battle_actions en el manifest');
@@ -100,49 +78,27 @@ export const useDojo = () => {
 
       console.log('Contrato battle_actions encontrado:', battleActionsContract);
 
-      // Obtener los modelos y eventos relacionados
-      const models = (manifest as any).models?.filter((model: any) => 
-        model.tag.startsWith("dojo_starter-")
-      );
-
-      const events = (manifest as any).events?.filter((event: any) => 
-        event.tag.startsWith("dojo_starter-")
-      );
-
-      // Combinar todos los elementos del ABI
-      const fullAbi = [
-        ...battleActionsContract.abi,
-        ...models.map((model: any) => ({
-          type: "struct",
-          name: model.tag,
-          members: model.members || []
-        })),
-        ...events.map((event: any) => ({
-          type: "event",
-          name: event.tag,
-          members: event.members || []
-        }))
-      ];
-
-      console.log('ABI completo:', fullAbi);
-
-      // Crear una nueva instancia del contrato con la cuenta
-      const connectedContract = new Contract(
-        fullAbi,
-        battleActionsContract.address,
-        executableAccount
-      );
-
-      console.log('Contrato conectado:', connectedContract);
-
       return {
         async createPlayer(stake: BigNumberish) {
           try {
-            console.log('Creando jugador con stake:', stake);
-            console.log('Usando cuenta:', executableAccount.address);
-            console.log('Usando contrato:', battleActionsContract.address);
-            
-            const response = await connectedContract.invoke("create_player", [stake]);
+            console.log('Creando jugador con:', {
+              account: account?.address,
+              stake,
+              contractAddress: battleActionsContract.address
+            });
+
+            const call: Call = {
+              contractAddress: battleActionsContract.address,
+              entrypoint: "create_player",
+              calldata: [stake]
+            };
+
+            const response = await dojoProvider.execute(
+              account,
+              [call],
+              "dojontdev"
+            );
+
             console.log('Respuesta de create_player:', response);
             return response;
           } catch (error) {
@@ -153,8 +109,24 @@ export const useDojo = () => {
 
         async joinBattle(battleId: BigNumberish) {
           try {
-            console.log('Uniéndose a batalla:', battleId);
-            const response = await connectedContract.invoke("join_battle", [battleId]);
+            console.log('Uniéndose a batalla:', {
+              account: account?.address,
+              battleId,
+              contractAddress: battleActionsContract.address
+            });
+
+            const call: Call = {
+              contractAddress: battleActionsContract.address,
+              entrypoint: "join_battle",
+              calldata: [battleId]
+            };
+
+            const response = await dojoProvider.execute(
+              account,
+              [call],
+              "dojontdev"
+            );
+
             console.log('Respuesta de join_battle:', response);
             return response;
           } catch (error) {
@@ -165,11 +137,26 @@ export const useDojo = () => {
 
         async performAction(battleId: BigNumberish, actionType: any, value: BigNumberish) {
           try {
-            console.log('Realizando acción:', { battleId, actionType, value });
-            const response = await connectedContract.invoke(
-              "perform_action",
-              [battleId, actionType, value]
+            console.log('Realizando acción:', {
+              account: account?.address,
+              battleId,
+              actionType,
+              value,
+              contractAddress: battleActionsContract.address
+            });
+
+            const call: Call = {
+              contractAddress: battleActionsContract.address,
+              entrypoint: "perform_action",
+              calldata: [battleId, actionType, value]
+            };
+
+            const response = await dojoProvider.execute(
+              account,
+              [call],
+              "dojontdev"
             );
+
             console.log('Respuesta de perform_action:', response);
             return response;
           } catch (error) {
@@ -179,13 +166,12 @@ export const useDojo = () => {
         }
       };
     } catch (error) {
-      console.error('Error en setup:', error);
+      console.error('Error en setup de Dojo:', error);
       throw error;
     }
   };
 
   return {
-    setup,
-    config
+    setup
   };
 }; 
