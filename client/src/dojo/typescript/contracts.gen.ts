@@ -17,7 +17,7 @@ export function setupWorld(provider: DojoProvider) {
 			return await provider.execute(
 				snAccount,
 				build_battle_actions_createPlayer_calldata(betAmount),
-				"dojo_starter",
+				"dojontdev",
 			);
 		} catch (error) {
 			console.error(error);
@@ -55,7 +55,7 @@ export function setupWorld(provider: DojoProvider) {
 			return await provider.execute(
 				snAccount,
 				build_battle_actions_joinBattle_calldata(battleId),
-				"dojo_starter",
+				"dojontdev",
 			);
 		} catch (error) {
 			console.error(error);
@@ -76,7 +76,7 @@ export function setupWorld(provider: DojoProvider) {
 			return await provider.execute(
 				snAccount,
 				build_battle_actions_performAction_calldata(battleId, actionType, value),
-				"dojo_starter",
+				"dojontdev",
 			);
 		} catch (error) {
 			console.error(error);
