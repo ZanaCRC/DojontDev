@@ -81,13 +81,15 @@ export const BattleLauncher: React.FC = () => {
       setLoading(true);
       
       // Obtener la cuenta de Starknet
-      const starknetAccount = await getStarknetAccount();
+      const starknetAccount = walletConnection.account!;
       
       // Usar la cuenta de Starknet directamente
       console.log("Usando cuenta Starknet:", starknetAccount);
       
       const worldContract = await setup(starknetAccount);
       console.log("World Contract:", worldContract);
+      
+      console.log("Stake:", stake);
       
       const result = await worldContract.createPlayer(stake as BigNumberish);
       console.log("Batalla creada:", result);
