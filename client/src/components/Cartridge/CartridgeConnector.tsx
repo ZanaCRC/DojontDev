@@ -13,19 +13,19 @@ const policies: SessionPolicies = {
     [CONTRACT_ADDRESS_BATTLE_SYSTEM]: {
       methods: [
         {
-          name: "battle_actions",
+          name: "createPlayer",
           entrypoint: "create_player"
         },
         {
-          name: "battle_actions",
+          name: "getAvailableBattlesByBet",
           entrypoint: "get_available_battles_by_bet"
         },
         {
-          name: "battle_actions",
+          name: "joinBattle",
           entrypoint: "join_battle"
         },
         {
-          name: "battle_actions",
+          name: "performAction",
           entrypoint: "perform_action"
         },
        
