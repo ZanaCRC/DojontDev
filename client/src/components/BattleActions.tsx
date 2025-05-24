@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useWallet } from '../context/WalletContext';
 import { useDojo } from '../hooks/useDojo';
-import { CairoCustomEnum } from 'starknet';
+import { CairoCustomEnum, RpcProvider } from 'starknet';
+
+const RPC_URL = import.meta.env.VITE_STARKNET_RPC_URL || "https://starknet-sepolia.public.blastapi.io";
 
 interface BattleAction {
   type: 'Attack' | 'Defense';
@@ -17,15 +19,69 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
     value: 1
   });
 
-  const handleAction = async () => {
+  const validateAccount = () => {
     if (!walletConnection.isConnected || !walletConnection.account) {
       alert("Por favor, conecta tu wallet primero.");
-      return;
+      return false;
+    }
+
+    if (!walletConnection.account.address) {
+      alert("La dirección de la wallet no está disponible. Por favor, reconecta tu wallet.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const getStarknetAccount = async () => {
+    const starknet = (window as any).starknet;
+    if (!starknet) {
+      throw new Error("Starknet no está disponible");
     }
 
     try {
+      // Asegurarse de que la wallet esté habilitada
+      await starknet.enable();
+      
+      // Obtener la cuenta actual
+      const account = starknet.account;
+      if (!account) {
+        throw new Error("No se pudo obtener la cuenta de Starknet");
+      }
+
+      // Asegurarse de que la cuenta tenga el provider correcto
+      if (!account.provider) {
+        const provider = new RpcProvider({ nodeUrl: RPC_URL });
+        account.provider = provider;
+      }
+
+      console.log("Cuenta Starknet obtenida para acción:", {
+        address: account.address,
+        signer: account.signer,
+        provider: account.provider,
+        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
+      });
+
+      return account;
+    } catch (error) {
+      console.error("Error al obtener la cuenta de Starknet:", error);
+      throw error;
+    }
+  };
+
+  const handleAction = async () => {
+    if (!validateAccount()) return;
+
+    try {
       setLoading(true);
-      const dojoActions = setup(walletConnection.account);
+
+      // Obtener la cuenta de Starknet
+      const starknetAccount = await getStarknetAccount();
+      
+      // Usar la cuenta de Starknet directamente
+      console.log("Usando cuenta Starknet para acción:", starknetAccount);
+
+      const dojoActions = await setup(starknetAccount);
       await dojoActions.performAction(
         Number(battleId),
         new CairoCustomEnum({ [selectedAction.type]: undefined }),
@@ -34,7 +90,26 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
       alert("¡Acción realizada con éxito!");
     } catch (error) {
       console.error("Error al realizar la acción:", error);
-      alert("Error al realizar la acción: " + (error as Error).message);
+      let errorMessage = "Error al realizar la acción: ";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
+          errorMessage = 
+            "No tienes suficientes fondos para pagar la tarifa de transacción.\n\n" +
+            "Por favor:\n" +
+            "1. Visita el faucet de Starknet: https://faucet.goerli.starknet.io\n" +
+            "2. Conecta tu wallet\n" +
+            "3. Solicita ETH de prueba\n" +
+            "4. Espera unos minutos a que se confirme la transacción\n" +
+            "5. Intenta realizar la acción nuevamente";
+        } else {
+          errorMessage += error.message;
+        }
+      } else {
+        errorMessage += "Error desconocido";
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
