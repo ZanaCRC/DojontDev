@@ -1,0 +1,20 @@
+world_address = "0x37269219354c3a2157552c6b7e0233ffa9a294d65ed18a5af4dcc7c72f6f665"
+
+
+ 
+# Default RPC URL configuration
+rpc = "https://api.cartridge.gg/x/starknet/sepolia"
+
+# Indexing Options
+[indexing]
+allowed_origins = ["*"]
+transactions = true
+pending = true
+polling_interval = 1000
+contracts = []
+
+[events]
+raw = true
+
+[sql]
+historical = [] 

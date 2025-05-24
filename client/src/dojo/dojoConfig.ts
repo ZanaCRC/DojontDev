@@ -4,7 +4,7 @@ import manifest from "../../../backend/manifest_sepolia.json";
  
 export const dojoConfig = createDojoConfig({
     manifest,
-    toriiUrl: "https://api.cartridge.gg/x/dojontdev/torii",
-    relayUrl: "https://api.cartridge.gg/x/dojontdev/torii",
-    rpcUrl: "https://api.cartridge.gg/x/starknet/sepolia",
+    toriiUrl: import.meta.env.VITE_TORII_URL,
+    relayUrl: import.meta.env.VITE_RELAY_URL,
+    rpcUrl: import.meta.env.VITE_RPC_URL,
 });
