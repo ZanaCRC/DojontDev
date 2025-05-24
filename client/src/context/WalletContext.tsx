@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Account, AccountInterface } from 'starknet';
+import React, { createContext, useContext, useState } from 'react';
+import { AccountInterface, Account, RpcProvider } from 'starknet';
 
 // Interfaz personalizada para nuestra cuenta
 interface CustomAccount extends Partial<AccountInterface> {
@@ -15,7 +15,7 @@ interface WalletContextType {
     account: CustomAccount | null;
     address: string | undefined;
   };
-  connectWallet: () => Promise<void>;
+  connectWallet: (wallet: any) => Promise<void>;
   disconnectWallet: () => void;
 }
 
@@ -38,61 +38,38 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     address: undefined,
   });
 
-  const connectWallet = async () => {
+  const connectWallet = async (wallet: any) => {
     try {
-      console.log("Intentando conectar wallet...");
-      const starknet = (window as any).starknet;
-      
-      if (!starknet) {
-        throw new Error("Por favor, instala Argent X primero");
+      if (!wallet) {
+        throw new Error("No se proporcionó una wallet válida");
       }
 
-      // Habilitar la wallet
-      const walletAccount = await starknet.enable({
-        starknetVersion: "v5"
-      });
-      console.log("Wallet habilitada:", walletAccount);
+      console.log("Procesando wallet para conexión:", wallet);
 
-      // Esperar a que la wallet esté lista
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Obtener la dirección de la cuenta
-      const address = starknet.selectedAddress;
-      console.log("Dirección obtenida:", address);
-
-      // Verificar si tenemos una cuenta válida
-      if (!address) {
-        throw new Error("No se pudo obtener la dirección de la wallet");
+      // Verificar que tengamos todos los datos necesarios
+      if (!wallet.account || !wallet.address || !wallet.provider) {
+        throw new Error("La wallet no tiene los datos necesarios");
       }
 
       // Crear el objeto de cuenta personalizado
-      const account: CustomAccount = {
-        address,
-        provider: starknet.provider,
-        signer: starknet.signer,
-        execute: starknet.account ? starknet.account.execute.bind(starknet.account) : undefined,
+      const customAccount: CustomAccount = {
+        address: wallet.address,
+        provider: wallet.provider,
+        signer: wallet.account.signer,
+        execute: wallet.account.execute?.bind(wallet.account)
       };
 
-      console.log("Cuenta creada:", account);
+      console.log("Cuenta personalizada creada:", customAccount);
+
+      // Verificar que la cuenta tenga los métodos necesarios
+      if (!customAccount.signer || !customAccount.execute) {
+        throw new Error("La cuenta no tiene los métodos necesarios (signer o execute)");
+      }
 
       setWalletConnection({
         isConnected: true,
-        account,
-        address,
-      });
-
-      // Suscribirse a eventos de la wallet
-      starknet.on('accountsChanged', (accounts: string[]) => {
-        console.log('Cuenta cambiada:', accounts);
-        if (accounts.length > 0) {
-          setWalletConnection(prev => ({
-            ...prev,
-            address: accounts[0],
-            account: prev.account ? { ...prev.account, address: accounts[0] } : null,
-          }));
-        } else {
-          disconnectWallet();
-        }
+        account: customAccount,
+        address: wallet.address,
       });
 
     } catch (error) {
@@ -109,26 +86,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       address: undefined,
     });
   };
-
-  useEffect(() => {
-    // Intentar reconectar si hay una sesión previa
-    const checkConnection = async () => {
-      const starknet = (window as any).starknet;
-      if (starknet && starknet.isConnected && starknet.selectedAddress) {
-        await connectWallet();
-      }
-    };
-
-    checkConnection();
-
-    // Limpiar al desmontar
-    return () => {
-      const starknet = (window as any).starknet;
-      if (starknet) {
-        starknet.off('accountsChanged', () => {});
-      }
-    };
-  }, []);
 
   return (
     <WalletContext.Provider value={{ walletConnection, connectWallet, disconnectWallet }}>
