@@ -4,7 +4,7 @@ description = "The official Dojo Starter guide, the quickest and most streamline
 cover_uri = "file://assets/cover.png"
 icon_uri = "file://assets/icon.png"
 website = "https://github.com/dojoengine/dojo-starter"
-seed = "dojo_starter"
+seed = "dojontdev_sepolia"
 
 [world.socials]
 x = "https://x.com/ohayo_dojo"
@@ -13,15 +13,15 @@ github = "https://github.com/dojoengine/dojo-starter"
 telegram = "https://t.me/dojoengine"
 
 [namespace]
-default = "dojo_starter"
+default = "dojontdev"
 
 [env]
 rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
-account_address = "0x064ff2ff6075b12e5c102d26be6106ed4b5f360465c5327e975a11587509c108"
-private_key = "0x016687d33a69c71c1a561855b0cd895c81c7d29e01f67d517bb89dbd11c3d5fe"
-world_address = "0x07466f623d14ac156e7cbb7f6546282d3c36be9d4ff6412058eebcb2e3a16f38"
-world_block = 795576
+#account_address = "0x064ff2ff6075b12e5c102d26be6106ed4b5f360465c5327e975a11587509c108"
+#private_key = "0x016687d33a69c71c1a561855b0cd895c81c7d29e01f67d517bb89dbd11c3d5fe"
+world_address = "0x037269219354c3a2157552c6b7e0233ffa9a294d65ed18a5af4dcc7c72f6f665"
+world_block = 796744
 
 
 [writers]
-"dojo_starter" = ["dojo_starter-battle_actions"]
+"dojontdev" = ["dojontdev-battle_actions"]

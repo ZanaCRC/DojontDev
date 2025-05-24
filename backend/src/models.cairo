@@ -1,4 +1,4 @@
 // Re-export battle models
-pub use dojo_starter::models::battle::{
+pub use dojontdev::models::battle::{
     Player, Battle, BattleAction, BattleStatus, ActionType, BattleRegistry
 };

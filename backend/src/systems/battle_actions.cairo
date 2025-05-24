@@ -1,4 +1,4 @@
-use dojo_starter::models::battle::{Player, Battle, BattleAction, BattleStatus, ActionType, BattleRegistry};
+use dojontdev::models::battle::{Player, Battle, BattleAction, BattleStatus, ActionType, BattleRegistry};
 use dojo::meta::introspect::Introspect;
 
 // define the interface
@@ -341,7 +341,7 @@ pub mod battle_actions {
     impl InternalImpl of InternalTrait {
         // Use the default namespace 
         fn world_default(self: @ContractState) -> dojo::world::WorldStorage {
-            self.world(@"dojo_starter")
+            self.world(@"dojontdev")
         }
         
         // Get or create the battle registry
