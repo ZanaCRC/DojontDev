@@ -1,13 +1,19 @@
 import { AccountInterface, RpcProvider, Contract, Account } from "starknet";
 import type { BigNumberish, CairoCustomEnum } from "starknet";
-import { setupWorld } from "../dojo/contracts.gen";
+import { setupWorld } from "../dojo/typescript/contracts.gen";
 import manifest from "../json/manifest_dev.json";
 
 // Configuración básica para desarrollo local
 const config = {
   rpcUrl: import.meta.env.VITE_RPC_URL || "http://localhost:5050",
   toriiUrl: import.meta.env.VITE_TORII_URL || "http://localhost:8080",
-  manifest
+  manifest: {
+    ...manifest,
+    world: {
+      ...manifest.world,
+      address: import.meta.env.VITE_WORLD_ADDRESS || manifest.world.address
+    }
+  }
 };
 
 interface ExtendedAccount extends AccountInterface {
@@ -17,6 +23,8 @@ interface ExtendedAccount extends AccountInterface {
 export const useDojo = () => {
   const rpcProvider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const worldAddress = config.manifest.world.address;
+  console.log("Usando World Address:", worldAddress);
+  
   const contract = new Contract(config.manifest.world.abi, worldAddress, rpcProvider);
 
   const getExecutableAccount = async (account: ExtendedAccount) => {
@@ -106,10 +114,16 @@ export const useDojo = () => {
 
         // Preparar la llamada
         const callArray = [{
-          contractAddress: worldAddress,
+          contractAddress: import.meta.env.VITE_BATTLE_CONTRACT_ADDRESS || worldAddress,
           entrypoint: call.entrypoint,
           calldata: call.calldata
         }];
+
+        console.log('Preparando llamada:', {
+          contractAddress: callArray[0].contractAddress,
+          entrypoint: call.entrypoint,
+          calldata: call.calldata
+        });
 
         if (!executableAccount.execute) {
           throw new Error('La cuenta no tiene método execute');
@@ -135,34 +149,37 @@ export const useDojo = () => {
 
   return {
     config,
-    setup: (account: ExtendedAccount) => ({
-      createPlayer: async (betAmount: BigNumberish) => {
-        console.log("Creando jugador con apuesta:", betAmount, "usando cuenta:", {
-          address: account.address,
-          hasExecute: typeof account.execute === 'function',
-          hasSigner: !!account.signer,
-          methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
-        });
-        return await worldContract.battle_actions.createPlayer(account, betAmount);
-      },
-      joinBattle: async (battleId: BigNumberish) => {
-        console.log("Uniéndose a la batalla:", battleId, "usando cuenta:", {
-          address: account.address,
-          hasExecute: typeof account.execute === 'function',
-          hasSigner: !!account.signer,
-          methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
-        });
-        return await worldContract.battle_actions.joinBattle(account, battleId);
-      },
-      performAction: async (battleId: BigNumberish, actionType: CairoCustomEnum, value: BigNumberish) => {
-        console.log("Realizando acción en batalla:", battleId, "tipo:", actionType, "valor:", value, "usando cuenta:", {
-          address: account.address,
-          hasExecute: typeof account.execute === 'function',
-          hasSigner: !!account.signer,
-          methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
-        });
-        return await worldContract.battle_actions.performAction(account, battleId, actionType, value);
-      }
-    })
+    setup: async (account: ExtendedAccount) => {
+      const executableAccount = await getExecutableAccount(account);
+      return {
+        createPlayer: async (betAmount: BigNumberish) => {
+          console.log("Creando jugador con apuesta:", betAmount, "usando cuenta:", {
+            address: executableAccount.address,
+            hasExecute: typeof executableAccount.execute === 'function',
+            hasSigner: !!executableAccount.signer,
+            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(executableAccount))
+          });
+          return await worldContract.battle_actions.createPlayer(executableAccount, betAmount);
+        },
+        joinBattle: async (battleId: BigNumberish) => {
+          console.log("Uniéndose a la batalla:", battleId, "usando cuenta:", {
+            address: executableAccount.address,
+            hasExecute: typeof executableAccount.execute === 'function',
+            hasSigner: !!executableAccount.signer,
+            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(executableAccount))
+          });
+          return await worldContract.battle_actions.joinBattle(executableAccount, battleId);
+        },
+        performAction: async (battleId: BigNumberish, actionType: CairoCustomEnum, value: BigNumberish) => {
+          console.log("Realizando acción en batalla:", battleId, "tipo:", actionType, "valor:", value, "usando cuenta:", {
+            address: executableAccount.address,
+            hasExecute: typeof executableAccount.execute === 'function',
+            hasSigner: !!executableAccount.signer,
+            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(executableAccount))
+          });
+          return await worldContract.battle_actions.performAction(executableAccount, battleId, actionType, value);
+        }
+      };
+    }
   };
 }; 

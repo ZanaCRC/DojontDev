@@ -7,6 +7,47 @@ import { Hero } from './components/Hero';
 import { Header } from './components/Header';
 import { useDojo } from './hooks/useDojo';
 import { WalletProvider } from './context/WalletContext';
+import { MarqueeDemo } from './components/MarqueeLogos';
+import { MorphingText } from './components/ShadcnComponents/MorphingText';
+import { useWallet } from './context/WalletContext';
+import { AnimatedGridPattern } from './components/ShadcnComponents/AnimatedGrid';
+import { cn } from './lib/utils';
+const AppContent = () => {
+  const { walletConnection } = useWallet();
+
+  return (
+    <>
+    
+    <div className="min-h-screen relative">
+    
+      <div className="absolute top-0 z-[-5] min-h-full w-full bg-neutral-100 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(11,0,83,0.3),rgba(255,255,255,0))]"></div>
+      <AnimatedGridPattern
+        numSquares={60}
+        maxOpacity={0.1}
+        duration={2}
+        repeatDelay={1}
+        className={cn(
+          "z-0",
+        )}
+      />
+      <div className="max-w-4xl mx-auto">
+        <Header />
+        <div className="h-[600px]">
+          <Hero />
+          <MorphingText texts={["Conectate", "Juega", "Gana","Dojon't game"]} />
+        </div>
+        <div className="">
+          <WalletConnect />
+          {walletConnection.isConnected && <BattleLauncher />}
+          <div className="flex flex-row justify-center items-center mt-20">
+            <MarqueeDemo />
+          </div>
+        </div>
+      </div>
+    </div>
+    </>
+  );
+};
 
 export function App() {
   const dojoContext = useDojo();
@@ -30,15 +71,7 @@ export function App() {
       autoConnect
     >
       <WalletProvider>
-        <div className="min-h-screen relative">
-          <div className="absolute top-0 z-[-5] min-h-full w-full bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
-          <div className="max-w-4xl mx-auto">
-            <Header />
-            <Hero />
-            <WalletConnect />
-            <BattleLauncher />
-          </div>
-        </div>
+        <AppContent />
       </WalletProvider>
     </StarknetConfig>
   );
