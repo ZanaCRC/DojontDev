@@ -1,6 +1,5 @@
 import { AccountInterface, RpcProvider, Contract, Account } from "starknet";
-import type { BigNumberish, CairoCustomEnum } from "starknet";
-import { setupWorld } from "../dojo/typescript/contracts.gen";
+import type { BigNumberish } from "starknet";
 import manifest from "../json/manifest_dev.json";
 
 // Configuración básica para desarrollo local
@@ -18,14 +17,20 @@ const config = {
 
 interface ExtendedAccount extends AccountInterface {
   provider?: RpcProvider;
+  signer: any;
+}
+
+interface SystemInfo {
+  tag: string;
+  address: string;
+  abi: any[];
+  selector: string;
 }
 
 export const useDojo = () => {
   const rpcProvider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const worldAddress = config.manifest.world.address;
   console.log("Usando World Address:", worldAddress);
-  
-  const contract = new Contract(config.manifest.world.abi, worldAddress, rpcProvider);
 
   const getExecutableAccount = async (account: ExtendedAccount) => {
     try {
@@ -39,147 +44,146 @@ export const useDojo = () => {
         methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
       });
 
-      // Si tiene signer, siempre crear una nueva instancia de Account
-      if (account.signer) {
-        console.log('Creando nueva instancia de Account con signer');
-        try {
-          const newAccount = new Account(
-            rpcProvider,
-            account.address,
-            account.signer
-          );
-          console.log('Nueva cuenta creada:', {
-            address: newAccount.address,
-            hasExecute: typeof newAccount.execute === 'function',
-            hasSigner: !!newAccount.signer,
-            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(newAccount))
-          });
-          return newAccount;
-        } catch (error) {
-          console.error('Error al crear nueva cuenta:', error);
-          throw error;
-        }
-      }
-
-      // Si tiene execute, intentar usarlo directamente
-      if (typeof account.execute === 'function') {
-        console.log('Usando cuenta con execute directamente');
+      // Si la cuenta ya es una instancia de Account y tiene todo lo necesario
+      if (account instanceof Account && account.signer) {
+        console.log('Usando cuenta existente');
         return account;
       }
 
-      // Si la cuenta es una instancia de Account
-      if (account instanceof Account) {
-        console.log('Cuenta es instancia de Account');
-        const extendedAccount = account as ExtendedAccount;
-        if (!extendedAccount.provider) {
-          console.log('Añadiendo provider a la cuenta');
-          extendedAccount.provider = rpcProvider;
-        }
-        return extendedAccount;
-      }
+      // Crear una nueva instancia de Account con los datos necesarios
+      console.log('Creando nueva instancia de Account');
+      const newAccount = new Account(
+        rpcProvider,
+        account.address,
+        account.signer
+      );
 
-      console.error('Cuenta inválida:', {
-        address: account.address,
-        hasExecute: typeof account.execute === 'function',
-        hasSigner: !!account.signer,
-        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
+      console.log('Nueva cuenta creada:', {
+        address: newAccount.address,
+        hasExecute: typeof newAccount.execute === 'function',
+        hasSigner: !!newAccount.signer,
+        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(newAccount))
       });
 
-      throw new Error('La cuenta proporcionada no es válida para ejecutar transacciones');
+      return newAccount;
     } catch (error) {
       console.error('Error al obtener cuenta ejecutable:', error);
       throw error;
     }
   };
 
-  const worldContract = setupWorld({
-    provider: rpcProvider,
-    manifest: config.manifest,
-    contract,
-    logger: console,
-    entity: async () => Promise.resolve([BigInt(0)]),
-    entities: async () => Promise.resolve([]),
-    execute: async (account: ExtendedAccount, call: any, systemName: string) => {
-      try {
-        // Obtener una cuenta ejecutable
-        const executableAccount = await getExecutableAccount(account);
-        
-        console.log('Ejecutando llamada con cuenta:', {
-          address: executableAccount.address,
-          hasExecute: typeof executableAccount.execute === 'function',
-          hasSigner: !!executableAccount.signer,
-          call,
-          systemName
-        });
-
-        // Preparar la llamada
-        const callArray = [{
-          contractAddress: import.meta.env.VITE_BATTLE_CONTRACT_ADDRESS || worldAddress,
-          entrypoint: call.entrypoint,
-          calldata: call.calldata
-        }];
-
-        console.log('Preparando llamada:', {
-          contractAddress: callArray[0].contractAddress,
-          entrypoint: call.entrypoint,
-          calldata: call.calldata
-        });
-
-        if (!executableAccount.execute) {
-          throw new Error('La cuenta no tiene método execute');
-        }
-
-        const result = await executableAccount.execute(callArray);
-        console.log(`Executed ${systemName} call:`, result);
-        return result;
-
-      } catch (error) {
-        console.error(`Error executing ${systemName} call:`, error);
-        if (error instanceof Error) {
-          console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-          });
-        }
-        throw error;
-      }
-    }
-  } as any);
-
-  return {
-    config,
-    setup: async (account: ExtendedAccount) => {
+  const setup = async (account: ExtendedAccount) => {
+    try {
+      console.log('Iniciando setup con cuenta:', account);
+      
       const executableAccount = await getExecutableAccount(account);
+      console.log('Cuenta ejecutable obtenida:', executableAccount);
+
+      // Asegurarse de que la cuenta tenga los métodos necesarios
+      if (!executableAccount.execute || !executableAccount.signer) {
+        throw new Error('La cuenta no tiene los métodos necesarios para ejecutar transacciones');
+      }
+
+      // Buscar el contrato battle_actions en el manifest
+      const battleActionsContract = (manifest as any).contracts?.find((contract: any) => 
+        contract.abi.some((item: any) => 
+          item.type === "interface" && 
+          item.name === "dojo_starter::systems::battle_actions::IBattleActions"
+        )
+      );
+
+      if (!battleActionsContract) {
+        throw new Error('No se encontró el contrato battle_actions en el manifest');
+      }
+
+      console.log('Contrato battle_actions encontrado:', battleActionsContract);
+
+      // Obtener los modelos y eventos relacionados
+      const models = (manifest as any).models?.filter((model: any) => 
+        model.tag.startsWith("dojo_starter-")
+      );
+
+      const events = (manifest as any).events?.filter((event: any) => 
+        event.tag.startsWith("dojo_starter-")
+      );
+
+      // Combinar todos los elementos del ABI
+      const fullAbi = [
+        ...battleActionsContract.abi,
+        ...models.map((model: any) => ({
+          type: "struct",
+          name: model.tag,
+          members: model.members || []
+        })),
+        ...events.map((event: any) => ({
+          type: "event",
+          name: event.tag,
+          members: event.members || []
+        }))
+      ];
+
+      console.log('ABI completo:', fullAbi);
+
+      // Crear una nueva instancia del contrato con la cuenta
+      const connectedContract = new Contract(
+        fullAbi,
+        battleActionsContract.address,
+        executableAccount
+      );
+
+      console.log('Contrato conectado:', connectedContract);
+
       return {
-        createPlayer: async (betAmount: BigNumberish) => {
-          console.log("Creando jugador con apuesta:", betAmount, "usando cuenta:", {
-            address: executableAccount.address,
-            hasExecute: typeof executableAccount.execute === 'function',
-            hasSigner: !!executableAccount.signer,
-            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(executableAccount))
-          });
-          return await worldContract.battle_actions.createPlayer(executableAccount, betAmount);
+        async createPlayer(stake: BigNumberish) {
+          try {
+            console.log('Creando jugador con stake:', stake);
+            console.log('Usando cuenta:', executableAccount.address);
+            console.log('Usando contrato:', battleActionsContract.address);
+            
+            const response = await connectedContract.invoke("create_player", [stake]);
+            console.log('Respuesta de create_player:', response);
+            return response;
+          } catch (error) {
+            console.error('Error al crear jugador:', error);
+            throw error;
+          }
         },
-        joinBattle: async (battleId: BigNumberish) => {
-          console.log("Uniéndose a la batalla:", battleId, "usando cuenta:", {
-            address: executableAccount.address,
-            hasExecute: typeof executableAccount.execute === 'function',
-            hasSigner: !!executableAccount.signer,
-            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(executableAccount))
-          });
-          return await worldContract.battle_actions.joinBattle(executableAccount, battleId);
+
+        async joinBattle(battleId: BigNumberish) {
+          try {
+            console.log('Uniéndose a batalla:', battleId);
+            const response = await connectedContract.invoke("join_battle", [battleId]);
+            console.log('Respuesta de join_battle:', response);
+            return response;
+          } catch (error) {
+            console.error('Error al unirse a la batalla:', error);
+            throw error;
+          }
         },
-        performAction: async (battleId: BigNumberish, actionType: CairoCustomEnum, value: BigNumberish) => {
-          console.log("Realizando acción en batalla:", battleId, "tipo:", actionType, "valor:", value, "usando cuenta:", {
-            address: executableAccount.address,
-            hasExecute: typeof executableAccount.execute === 'function',
-            hasSigner: !!executableAccount.signer,
-            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(executableAccount))
-          });
-          return await worldContract.battle_actions.performAction(executableAccount, battleId, actionType, value);
+
+        async performAction(battleId: BigNumberish, actionType: any, value: BigNumberish) {
+          try {
+            console.log('Realizando acción:', { battleId, actionType, value });
+            const response = await connectedContract.invoke(
+              "perform_action",
+              [battleId, actionType, value]
+            );
+            console.log('Respuesta de perform_action:', response);
+            return response;
+          } catch (error) {
+            console.error('Error al realizar acción:', error);
+            throw error;
+          }
         }
       };
+    } catch (error) {
+      console.error('Error en setup:', error);
+      throw error;
     }
+  };
+
+  return {
+    setup,
+    config
   };
 }; 

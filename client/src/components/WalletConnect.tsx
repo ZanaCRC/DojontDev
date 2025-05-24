@@ -1,19 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { connect, disconnect } from 'starknetkit';
-import { AccountInterface, Account } from 'starknet';
+import { AccountInterface } from 'starknet';
 import { useWallet } from '../context/WalletContext';
 
 export interface WalletConnection {
   address?: string;
   account?: AccountInterface;
-  isConnected: boolean;
-}
-
-interface ExtendedWallet {
-  address: string;
-  account?: AccountInterface;
-  signer?: any;
-  provider?: any;
   isConnected: boolean;
 }
 
@@ -24,29 +16,67 @@ export const WalletConnect: React.FC = () => {
   const handleConnect = useCallback(async () => {
     setIsLoading(true);
     try {
-      await connectWallet();
+      // Primer paso: Conectar con starknetkit
+      const { wallet } = await connect({
+        modalMode: "alwaysAsk",
+        webWalletUrl: "https://web.argent.xyz",
+        dappName: "Dojon't Game",
+      });
+
+      console.log("Wallet inicial:", wallet);
+
+      if (!wallet) {
+        throw new Error("No se pudo conectar con la wallet");
+      }
+
+      try {
+        // Habilitar la wallet
+        await wallet.enable();
+        
+        // Verificar que tenemos los datos necesarios
+        if (!wallet.isConnected || !wallet.account || !wallet.selectedAddress) {
+          throw new Error("No se obtuvieron los datos necesarios de la wallet");
+        }
+
+        console.log("Wallet habilitada:", {
+          isConnected: wallet.isConnected,
+          account: wallet.account,
+          address: wallet.selectedAddress,
+          provider: wallet.provider,
+          signer: wallet.account.signer
+        });
+
+        // Crear el objeto de cuenta para el contexto
+        const starknetWallet = {
+          account: wallet.account,
+          address: wallet.selectedAddress,
+          provider: wallet.provider,
+          isConnected: wallet.isConnected
+        };
+
+        // Pasar la wallet al contexto
+        await connectWallet(starknetWallet);
+
+      } catch (enableError) {
+        console.error("Error al habilitar la wallet:", enableError);
+        throw new Error("Error al habilitar la wallet: " + (enableError as Error).message);
+      }
     } catch (error) {
-      console.error('Error al conectar wallet:', error);
+      console.error('Error en el proceso de conexión:', error);
+      alert('Error al conectar wallet: ' + (error as Error).message);
     } finally {
       setIsLoading(false);
     }
   }, [connectWallet]);
 
-  useEffect(() => {
-    console.log('Estado actual de la conexión:', walletConnection);
-  }, [walletConnection]);
-
-  useEffect(() => {
-    const savedConnection = localStorage.getItem('wallet_connection');
-    if (savedConnection) {
-      const parsed = JSON.parse(savedConnection);
-      if (parsed.isConnected) {
-        handleConnect();
-      }
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+      disconnectWallet();
+    } catch (error) {
+      console.error('Error al desconectar wallet:', error);
     }
-  }, [handleConnect]);
-
-  console.log('Renderizando WalletConnect, isConnected:', walletConnection.isConnected);
+  };
 
   return (
     <div className="justify-center items-center flex">
@@ -70,7 +100,7 @@ export const WalletConnect: React.FC = () => {
             {walletConnection.address?.slice(0, 6)}...{walletConnection.address?.slice(-4)}
           </span>
           <button
-            onClick={disconnectWallet}
+            onClick={handleDisconnect}
             className="px-4 py-2 rounded text-white font-medium bg-red-500 hover:bg-red-600 active:bg-red-700 transition-all duration-200"
           >
             Desconectar
