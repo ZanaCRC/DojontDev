@@ -5,7 +5,7 @@ import manifest from "../json/manifest_dev.json";
 
 // Configuración básica para desarrollo local
 const config = {
-  rpcUrl: import.meta.env.VITE_RPC_URL || "http://localhost:5050",
+  rpcUrl: import.meta.env.VITE_STARKNET_RPC_URL || "https://starknet-sepolia.public.blastapi.io",
   toriiUrl: import.meta.env.VITE_TORII_URL || "http://localhost:8080",
   manifest: {
     ...manifest,

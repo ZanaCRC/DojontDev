@@ -6,6 +6,8 @@ import { BattleActions } from "./BattleActions";
 import type { BigNumberish } from "starknet";
 import { Account, RpcProvider } from "starknet";
 
+const RPC_URL = import.meta.env.VITE_STARKNET_RPC_URL || "https://starknet-sepolia.public.blastapi.io";
+
 export const BattleLauncher: React.FC = () => {
   const { walletConnection } = useWallet();
   const [stake, setStake] = useState("0");
@@ -28,6 +30,42 @@ export const BattleLauncher: React.FC = () => {
     return true;
   };
 
+  const getStarknetAccount = async () => {
+    const starknet = (window as any).starknet;
+    if (!starknet) {
+      throw new Error("Starknet no está disponible");
+    }
+
+    try {
+      // Asegurarse de que la wallet esté habilitada
+      await starknet.enable();
+      
+      // Obtener la cuenta actual
+      const account = starknet.account;
+      if (!account) {
+        throw new Error("No se pudo obtener la cuenta de Starknet");
+      }
+
+      // Asegurarse de que la cuenta tenga el provider correcto
+      if (!account.provider) {
+        const provider = new RpcProvider({ nodeUrl: RPC_URL });
+        account.provider = provider;
+      }
+
+      console.log("Cuenta Starknet obtenida:", {
+        address: account.address,
+        signer: account.signer,
+        provider: account.provider,
+        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(account))
+      });
+
+      return account;
+    } catch (error) {
+      console.error("Error al obtener la cuenta de Starknet:", error);
+      throw error;
+    }
+  };
+
   const handleCreateBattle = async () => {
     if (!validateAccount()) return;
 
@@ -41,19 +79,14 @@ export const BattleLauncher: React.FC = () => {
 
     try {
       setLoading(true);
-      // Crear una instancia de Account con la dirección
-      const provider = new RpcProvider({ 
-        nodeUrl: import.meta.env.VITE_STARKNET_RPC_URL
-      });
       
-      const account = new Account(
-        provider,
-        accountAddress,
-        walletConnection.account!.signer
-      );
-      console.log("Cuenta creada:", account);
+      // Obtener la cuenta de Starknet
+      const starknetAccount = await getStarknetAccount();
       
-      const worldContract = await setup(account);
+      // Usar la cuenta de Starknet directamente
+      console.log("Usando cuenta Starknet:", starknetAccount);
+      
+      const worldContract = await setup(starknetAccount);
       console.log("World Contract:", worldContract);
       
       const result = await worldContract.createPlayer(stake as BigNumberish);
@@ -67,7 +100,7 @@ export const BattleLauncher: React.FC = () => {
         );
         
         if (battleCreatedEvent) {
-          const battleId = battleCreatedEvent.data[0]; // El primer dato es el battle_id
+          const battleId = battleCreatedEvent.data[0];
           console.log("ID de batalla creada:", battleId);
           setActiveBattleId(battleId.toString());
         }
@@ -77,7 +110,26 @@ export const BattleLauncher: React.FC = () => {
       setStake("0");
     } catch (error) {
       console.error("Error al crear la batalla:", error);
-      alert("Error al crear la batalla: " + (error as Error).message);
+      let errorMessage = "Error al crear la batalla: ";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
+          errorMessage = 
+            "No tienes suficientes fondos para pagar la tarifa de transacción.\n\n" +
+            "Por favor:\n" +
+            "1. Visita el faucet de Starknet: https://faucet.goerli.starknet.io\n" +
+            "2. Conecta tu wallet\n" +
+            "3. Solicita ETH de prueba\n" +
+            "4. Espera unos minutos a que se confirme la transacción\n" +
+            "5. Intenta crear la batalla nuevamente";
+        } else {
+          errorMessage += error.message;
+        }
+      } else {
+        errorMessage += "Error desconocido";
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -96,19 +148,14 @@ export const BattleLauncher: React.FC = () => {
 
     try {
       setLoading(true);
-      // Crear una instancia de Account con la dirección
-      const provider = new RpcProvider({ 
-        nodeUrl: import.meta.env.VITE_STARKNET_RPC_URL || 'https://starknet-sepolia.public.blastapi.io'
-      });
       
-      const account = new Account(
-        provider,
-        accountAddress,
-        walletConnection.account!.signer
-      );
-      console.log("Cuenta creada:", account);
+      // Obtener la cuenta de Starknet
+      const starknetAccount = await getStarknetAccount();
       
-      const worldContract = await setup(account);
+      // Usar la cuenta de Starknet directamente
+      console.log("Usando cuenta Starknet:", starknetAccount);
+      
+      const worldContract = await setup(starknetAccount);
       console.log("World Contract:", worldContract);
       
       await worldContract.joinBattle(battleId as BigNumberish);
