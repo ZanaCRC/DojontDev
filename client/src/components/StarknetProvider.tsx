@@ -1,35 +1,47 @@
-import { RpcProvider } from 'starknet';
-import { useEffect, useState } from 'react';
-import { Provider } from 'starknet';
+import type { PropsWithChildren } from "react";
+import { sepolia, mainnet } from "@starknet-react/chains";
+import {
+    jsonRpcProvider,
+    StarknetConfig,
+    starkscan,
+} from "@starknet-react/core";
+import cartridgeConnector from "./Cartridge/CartridgeConnector";
 
-interface StarknetProviderProps {
-  children: React.ReactNode;
-}
+export default function StarknetProvider({ children }: PropsWithChildren) {
+    const { VITE_PUBLIC_DEPLOY_TYPE } = import.meta.env;
+    const { VITE_PUBLIC_SLOT_ADDRESS } = import.meta.env;
 
-export const StarknetProvider: React.FC<StarknetProviderProps> = ({ children }) => {
-  const [provider, setProvider] = useState<Provider | null>(null);
-
-  useEffect(() => {
-    const initializeProvider = async () => {
-      const provider = new RpcProvider({
-        nodeUrl: import.meta.env.VITE_STARKNET_RPC_URL || 'http://localhost:5050',
-      });
-      
-      setProvider(provider);
+    // Get RPC URL based on environment
+    const getRpcUrl = () => {
+        switch (VITE_PUBLIC_DEPLOY_TYPE) {
+            case "mainnet":
+                return "https://api.cartridge.gg/x/starknet/mainnet";
+            case "sepolia":
+                return "https://api.cartridge.gg/x/starknet/sepolia";
+            default:
+                return VITE_PUBLIC_SLOT_ADDRESS; 
+        }
     };
 
-    initializeProvider();
-  }, []);
+    // Create provider with the correct RPC URL
+    const provider = jsonRpcProvider({
+        rpc: () => ({ nodeUrl: getRpcUrl() }),
+    });
 
-  if (!provider) {
-    return <div>Conectando a Starknet...</div>;
-  }
+    // Determine which chain to use
+    const chains = VITE_PUBLIC_DEPLOY_TYPE === "mainnet" 
+        ? [mainnet] 
+        : [sepolia];
 
-  return (
-    <div className="starknet-provider">
-      {children}
-    </div>
-  );
-};
-
-export default StarknetProvider;
+    return (
+        <StarknetConfig
+            autoConnect
+            chains={chains}
+            connectors={[cartridgeConnector]}
+            explorer={starkscan}
+            provider={provider}
+        >
+            {children}
+        </StarknetConfig>
+    );
+}

@@ -1,12 +1,8 @@
 import { AccountInterface, RpcProvider, Contract, Account } from "starknet";
-<<<<<<< HEAD
-import type { BigNumberish } from "starknet";
-import manifest from "../json/manifest_dev.json";
-=======
 import type { BigNumberish, CairoCustomEnum } from "starknet";
 import { setupWorld } from "../dojo/typescript/contracts.gen";
 import manifest from "../json/manifest_sepolia.json";
->>>>>>> 61d66bea591ac9eea4dca20066d33cdc507615d4
+
 
 // Configuración básica para desarrollo local
 const config = {
