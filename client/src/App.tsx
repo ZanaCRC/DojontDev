@@ -11,6 +11,7 @@ import { MarqueeDemo } from './components/MarqueeLogos';
 import { MorphingText } from './components/ShadcnComponents/MorphingText';
 import { useWallet } from './context/WalletContext';
 import { AnimatedGridPattern } from './components/ShadcnComponents/AnimatedGrid';
+import { BorderBeamCard } from './components/AboutDojont';
 import { cn } from './lib/utils';
 const AppContent = () => {
   const { walletConnection } = useWallet();
@@ -20,7 +21,7 @@ const AppContent = () => {
     
     <div className="min-h-screen relative">
     
-      <div className="absolute top-0 z-[-5] min-h-full w-full bg-neutral-100 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(11,0,83,0.3),rgba(255,255,255,0))]"></div>
+      <div className="absolute top-0 z-[-5] min-h-full w-full bg-[#111111] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(11,0,83,0.3),rgba(255,255,255,0))]"></div>
       <AnimatedGridPattern
         numSquares={60}
         maxOpacity={0.1}
@@ -38,13 +39,15 @@ const AppContent = () => {
         </div>
         <div className="">
           <ConnectWallet />
-          {walletConnection.isConnected && <BattleLauncher />}
           <div className="flex flex-row justify-center items-center mt-20">
+
+            <BorderBeamCard />
+            </div>
             <MarqueeDemo />
           </div>
         </div>
       </div>
-    </div>
+    
     </>
   );
 };

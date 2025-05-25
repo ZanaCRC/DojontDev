@@ -32,7 +32,7 @@ export function AnimatedGridPattern({
   strokeDasharray = 0,
   numSquares = 50,
   className,
-  maxOpacity = 1,
+  maxOpacity = 0.1,
   duration = 4,
   repeatDelay = 0.5,
   ...props
@@ -105,7 +105,7 @@ export function AnimatedGridPattern({
       ref={containerRef}
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 h-full w-full fill-gray-400/30 stroke-gray-400/30",
+        "pointer-events-none absolute inset-0 h-full w-full fill-gray-400/10 stroke-gray-400/10",
         className,
       )}
       {...props}
@@ -144,7 +144,7 @@ export function AnimatedGridPattern({
             height={height - 1}
             x={x * width + 1}
             y={y * height + 1}
-            fill="currentColor"
+            fill="#4F7CEC"
             strokeWidth="0"
           />
         ))}
