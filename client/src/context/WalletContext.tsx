@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { AccountInterface, Account, RpcProvider } from 'starknet';
+import { AccountInterface, Account } from 'starknet';
 
 // Interfaz personalizada para nuestra cuenta
 interface CustomAccount extends Partial<AccountInterface> {
@@ -40,31 +40,33 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const connectWallet = async (wallet: any) => {
     try {
+      console.log("WalletContext - Iniciando conexión de wallet:", {
+        walletData: wallet,
+        currentConnection: walletConnection
+      });
+
       if (!wallet) {
         throw new Error("No se proporcionó una wallet válida");
       }
 
-      console.log("Procesando wallet para conexión:", wallet);
-
-      // Verificar que tengamos todos los datos necesarios
-      if (!wallet.account || !wallet.address || !wallet.provider) {
-        throw new Error("La wallet no tiene los datos necesarios");
+      if (!wallet.address) {
+        throw new Error("La wallet no tiene dirección");
       }
 
       // Crear el objeto de cuenta personalizado
       const customAccount: CustomAccount = {
         address: wallet.address,
-        provider: wallet.provider,
-        signer: wallet.account.signer,
-        execute: wallet.account.execute?.bind(wallet.account)
+        provider: wallet.provider || wallet.account?.provider,
+        signer: wallet.account?.signer,
+        execute: wallet.account?.execute?.bind(wallet.account)
       };
 
-      console.log("Cuenta personalizada creada:", customAccount);
-
-      // Verificar que la cuenta tenga los métodos necesarios
-      if (!customAccount.signer || !customAccount.execute) {
-        throw new Error("La cuenta no tiene los métodos necesarios (signer o execute)");
-      }
+      console.log("WalletContext - Cuenta personalizada creada:", {
+        address: customAccount.address,
+        hasProvider: Boolean(customAccount.provider),
+        hasSigner: Boolean(customAccount.signer),
+        hasExecute: Boolean(customAccount.execute)
+      });
 
       setWalletConnection({
         isConnected: true,
@@ -72,14 +74,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         address: wallet.address,
       });
 
+      console.log("WalletContext - Wallet conectada exitosamente");
+
     } catch (error) {
-      console.error("Error al conectar wallet:", error);
-      alert("Error al conectar wallet: " + (error as Error).message);
+      console.error("WalletContext - Error al conectar wallet:", error);
       disconnectWallet();
+      throw error; // Re-lanzar el error para manejarlo en el componente
     }
   };
 
   const disconnectWallet = () => {
+    console.log("WalletContext - Desconectando wallet");
     setWalletConnection({
       isConnected: false,
       account: null,
