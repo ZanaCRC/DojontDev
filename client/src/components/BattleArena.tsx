@@ -252,11 +252,12 @@ export const BattleArena = () => {
 
   return (
     <div 
-      className="relative w-full h-[920px] flex items-center justify-center transition-opacity duration-300"
+      className="relative w-full h-screen flex items-center justify-center transition-opacity duration-300"
       style={{
-        backgroundImage: 'url("/b.png")', 
+        backgroundImage: 'url("/Pasted_image.png")', 
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }}
     >
       {/* Audio Controls */}
