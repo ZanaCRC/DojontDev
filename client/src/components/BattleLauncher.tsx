@@ -20,19 +20,14 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
   const navigate = useNavigate();
   const { walletConnection } = useWallet();
   const [selectedBattleId, setSelectedBattleId] = useState<string | null>(null);
-  const [battleId, setBattleId] = useState("");
-  const [activeBattleId, setActiveBattleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  
   const [txHash, setTxHash] = useState<string | null>(null);
   const { setup } = useDojo();
   const { connectors } = useConnect();
   const controller = connectors[0] as ControllerConnector;
   const { execute: createPlayer, submitted } = useCreatePlayer();
-  const { battles, loading: loadingBattles, fetchAvailableBattles } = useJoinBattle();
+  const { battles, loading: loadingBattles, fetchAvailableBattles, joinBattle } = useJoinBattle();
   const [usernames, setUsernames] = useState<Map<string, string>>(new Map());
-  
 
   // Convertir el amount a wei en formato hexadecimal
   const amountInWei = amount 
@@ -136,81 +131,54 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
     }
   };
 
-  const handleJoinBattle = async () => {
-    if (!validateAmount()) return;
+  const handleBattleClick = async (battleId: number) => {
+    // Mostrar diálogo de confirmación
+    const confirmMessage = `¿Estás seguro que quieres unirte a la Batalla #${battleId}?\n\n` +
+      `Monto a apostar: ${amount} ETH\n` +
+      `Esta acción requerirá una transacción en la blockchain y no se puede deshacer.`;
 
-    if (!battleId) {
-      alert("Por favor, ingresa un ID de batalla válido.");
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
       setLoading(true);
-      console.log("Uniendo a batalla con Cartridge:", {
-        battleId,
-        controller: Boolean(controller),
-        controllerMethods: Object.keys(controller || {})
-      });
-
-      if (!controller) {
-        throw new Error("No se encontró el controlador de Cartridge");
+      console.log("Uniéndose a la batalla:", battleId);
+      
+      const result = await joinBattle(battleId);
+      if (result) {
+        setTxHash(result.transaction_hash);
+        alert("¡Te has unido a la batalla! Hash: " + result.transaction_hash);
+        // Redirigir a la vista de batalla
+        navigate(`/battleview/${battleId}`);
+      }
+    } catch (error: any) {
+      console.error("Error al unirse a la batalla:", error);
+      let errorMessage = "Error al unirse a la batalla: ";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
+          errorMessage = 
+            "No tienes suficientes fondos para pagar la tarifa de transacción.\n\n" +
+            "Por favor:\n" +
+            "1. Visita el faucet de Starknet: https://faucet.goerli.starknet.io\n" +
+            "2. Conecta tu wallet\n" +
+            "3. Solicita ETH de prueba\n" +
+            "4. Espera unos minutos a que se confirme la transacción\n" +
+            "5. Intenta unirte a la batalla nuevamente";
+        } else {
+          errorMessage += error.message;
+        }
+      } else {
+        errorMessage += "Error desconocido";
       }
       
-      const worldContract = await setup(controller);
-      const result = await worldContract.joinBattle(battleId as BigNumberish);
-      
-      console.log("Resultado de unirse a batalla:", {
-        result,
-        type: typeof result,
-        properties: Object.keys(result || {})
-      });
-
-      alert("¡Te has unido a la batalla! La transacción está siendo procesada.");
-      setActiveBattleId(battleId);
-      setBattleId("");
-    } catch (error: any) {
-      console.error("Error detallado al unirse a la batalla:", {
-        error,
-        message: error?.message,
-        code: error?.code,
-        stack: error?.stack
-      });
-      alert("Error al unirse a la batalla: " + (error as Error).message);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBattleClick = (battleId: number) => {
-    setSelectedBattleId(battleId.toString());
-  };
-
-  const handleAttack = () => {
-    console.log("Ataque realizado en batalla:", selectedBattleId);
-  };
-
-  // Si hay una batalla seleccionada, mostrar la vista de batalla
-  if (selectedBattleId) {
-    return (
-      <div className="w-full">
-        <button 
-          onClick={() => setSelectedBattleId(null)}
-          className="mb-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-        >
-          ← Volver a la lista de batallas
-        </button>
-        <BattleArena
-          battleId={selectedBattleId}
-          player1Health={100}
-          player2Health={100}
-          isMyTurn={true}
-          onAttack={handleAttack}
-        />
-      </div>
-    );
-  }
-
-  // Si no hay batalla seleccionada, mostrar la lista de batallas
   return (
     <div className="space-y-6">
       <div className="p-6 border rounded-xl shadow-md border-gray-900">
@@ -254,16 +222,16 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
           <div className="grid grid-cols-1 gap-4">
             <button
               onClick={handleCreateBattle}
-              disabled={!canInteract}
+              disabled={!canInteract || loading}
               className={`
                 px-6 py-3 rounded-lg font-medium transition-all duration-300
-                ${!canInteract
+                ${(!canInteract || loading)
                   ? 'bg-gray-300 cursor-not-allowed text-gray-500'
                   : 'bg-purple-100 hover:bg-purple-200 text-purple-700 border-2 border-purple-300'
                 }
               `}
             >
-              {loading ? 'Creando batalla...' : 'Crear Batalla'}
+              {loading ? 'Procesando...' : 'Crear Batalla'}
             </button>
           </div>
 
@@ -280,7 +248,10 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
                   <div 
                     key={battle.battle_id}
                     onClick={() => handleBattleClick(battle.battle_id)}
-                    className="p-4 border border-purple-200 rounded-lg hover:bg-purple-50 cursor-pointer transition-all"
+                    className={`
+                      p-4 border border-purple-200 rounded-lg hover:bg-purple-50 cursor-pointer transition-all
+                      ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
                   >
                     <div className="flex justify-between items-center">
                       <div>
@@ -307,10 +278,6 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
           </div>
         </div>
       </div>
-
-      {activeBattleId && (
-        <BattleActions battleId={activeBattleId} />
-      )}
     </div>
   );
 }
