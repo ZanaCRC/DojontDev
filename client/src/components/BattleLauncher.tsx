@@ -150,7 +150,8 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
         setTxHash(result.transaction_hash);
         alert("¡Te has unido a la batalla! Hash: " + result.transaction_hash);
         // Redirigir a la vista de batalla
-        navigate(`/battleview/${battleId}`);
+        navigate(`/BattleArena/${battleId}`);
+        //navigate(`/battleview/${battleId}`);
       }
     } catch (error: any) {
       console.error("Error al unirse a la batalla:", error);
