@@ -15,12 +15,12 @@ export function BorderBeamCard() {
       
 
       <article className="flex flex-col justify-center items-center tracking-wide leading-tight">
-      <h2 className="text-5xl font-semibold  pb-12">Bienvenido a DOJON&apos;T</h2>
-      <p className="text-xl font-light  pb-6">Entra en Dojon’t, la arena definitiva donde el juego se une con el poder del blockchain. Conéctate fácilmente con tu wallet Braavos o ArgentX, apuesta tus activos y prepárate para luchar en intensas batallas por turnos llenas de táctica y emoción.</p>
+      <h2 className="text-5xl font-semibold  pb-12">Welcome to DOJON&apos;T</h2>
+      <p className="text-xl font-light  pb-6">Step into Dojon’t — the ultimate arena where gaming meets the power of blockchain. Easily connect your Braavos or ArgentX wallet, stake your assets, and get ready to battle in intense, turn-based duels full of strategy and excitement.</p>
 
-      <p className="text-xl font-light  pb-6">⚔️ Demuestra tu habilidad, arriesga con inteligencia y gana premios reales en esta experiencia competitiva impulsada por tecnología web3.</p>
+      <p className="text-xl font-light  pb-6">⚔️ Prove your skill, take smart risks, and win real rewards in this competitive web3-powered experience.</p>
       <p className="text-xl font-light  pb-6">¿Tienes lo que se necesita para dominar el dojo?
-      ¡Únete a la batalla y conquista tu victoria!</p>
+      Do you have what it takes to master the dojo? ¡Join the fight and claim your victory!</p>
 
       
       </article>
