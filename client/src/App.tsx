@@ -37,7 +37,7 @@ const AppContent = () => {
         <Header />
         <div className="h-[600px]">
           <Hero />
-          <MorphingText texts={["Connect", "Play", "Winn","Dojon't game"]} />
+          <MorphingText texts={["Connect", "Play", "Win","Dojon't game"]} />
         </div>
         <div className="">
           <ConnectWallet />

@@ -22,6 +22,8 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
   const [selectedBattleId, setSelectedBattleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectMessage, setRedirectMessage] = useState("");
   const { setup } = useDojo();
   const { connectors } = useConnect();
   const controller = connectors[0] as ControllerConnector;
@@ -90,15 +92,30 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
     
     try {
       setLoading(true);
+      setIsRedirecting(true);
+      setRedirectMessage("Creando batalla...");
       console.log("Creating a battle with amount:", amountInWei);
 
       const result = await createPlayer(amountInWei as BigNumberish);
       if (result) {
         setTxHash(result.transaction_hash);
-        alert("¡Transaction Sent! Hash: " + result.transaction_hash);
+        setRedirectMessage("¡Transacción enviada! Esperando confirmación...");
+        
+        // Esperar a que la transacción se confirme y obtener el ID de la batalla
+        const battlesData = await fetchAvailableBattles(amountInWei);
+        if (battlesData && battlesData.length > 0) {
+          setRedirectMessage("¡Batalla creada! Redirigiendo a la arena...");
+          // Obtener la primera batalla disponible (la más antigua)
+          const firstBattle = battlesData[0];
+          // Pequeña pausa para mostrar el mensaje de éxito
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Redirigir a la vista de batalla
+          navigate(`/BattleArena/${firstBattle.battle_id}`);  
+        }
       }
 
     } catch (error: any) {
+      setIsRedirecting(false);
       console.error("Detailed error when creating the batlle:", {
         error,
         message: error?.message,
@@ -143,17 +160,19 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
 
     try {
       setLoading(true);
-      console.log("Joning the battle:", battleId);
+      setIsRedirecting(true);
+      setRedirectMessage("Uniéndose a la batalla...");
+      console.log("Joining the battle:", battleId);
       
       const result = await joinBattle(battleId);
       if (result) {
         setTxHash(result.transaction_hash);
-        alert("¡You have joined the battle! Hash: " + result.transaction_hash);
-        // Redirigir a la vista de batalla
+        setRedirectMessage("¡Te has unido a la batalla! Redirigiendo a la arena...");
+        await new Promise(resolve => setTimeout(resolve, 1500));
         navigate(`/BattleArena/${battleId}`);
-        //navigate(`/battleview/${battleId}`);
       }
     } catch (error: any) {
+      setIsRedirecting(false);
       console.error("Error when joining the battle:", error);
       let errorMessage = "Error when joining the battle: ";
       
@@ -181,9 +200,20 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {isRedirecting && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-gradient-to-r from-[#4F7CEC]/10 to-[#9c40ff]/10 p-8 rounded-2xl border border-[#4F7CEC]/20 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#4F7CEC] mx-auto mb-4"></div>
+            <p className="text-white text-xl font-semibold animate-pulse">
+              {redirectMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="p-6 border rounded-xl shadow-md border-gray-900">
-        <h2 className="text-2xl text-neutral-900 font-semibold mb-4">Batalla</h2>
+        <h2 className="text-2xl text-neutral-200 font-semibold mb-4">Batalla</h2>
         
         <div className="space-y-4">
           {!isValidAmount && (
@@ -195,7 +225,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
           )}
 
           <div className="mb-4">
-            <p className="text-neutral-600">Amount Selected:</p>
+            <p className="text-neutral-400">Amount Selected:</p>
             {isValidAmount ? (
               <>
                 <p className="text-xl font-semibold text-purple-600">{amount} ETH</p>
@@ -220,14 +250,14 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 z-50">
             <button
               onClick={handleCreateBattle}
               disabled={!canInteract || loading}
               className={`
-                px-6 py-3 rounded-lg font-medium transition-all duration-300
+                px-6 py-3 rounded-lg font-medium transition-all duration-300 cursor-pointer
                 ${(!canInteract || loading)
-                  ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                  ? 'bg-gray-300 cursor-not-allowed text-gray-300'
                   : 'bg-purple-100 hover:bg-purple-200 text-purple-700 border-2 border-purple-300'
                 }
               `}
@@ -238,9 +268,9 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
 
           {/* Lista de batallas disponibles */}
           <div className="mt-8">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+            <h3 className="text-lg font-semibold text-neutral-200 mb-4">
               Available Battles
-              {loadingBattles && <span className="ml-2 text-sm text-gray-500">(Loading...)</span>}
+              {loadingBattles && <span className="ml-2 text-sm text-gray-400">(Loading...)</span>}
             </h3>
             
             {battles.length > 0 ? (
@@ -272,7 +302,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
                 ))}
               </div>
             ) : isValidAmount ? (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-00 text-center py-4 text-neutral-200">
                 There are no battles available with this amount
               </p>
             ) : null}
