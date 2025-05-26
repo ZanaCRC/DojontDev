@@ -8,16 +8,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<App />} />
       <Route path="/battleview" element={<BattleView />} />
-      <Route path="/BattleArena" 
-        element={
-          <BattleArena
-            player1Health={100}
-            player2Health={100}
-            isMyTurn={true}
-            onAttack={() => console.log("Ataque!")}
-            battleId="0001"
-          />
-        } />
-    </Routes>
+      <Route path="/BattleArena/:battleId" element={<BattleArena />} />
+    </Routes> 
   );
 } 
