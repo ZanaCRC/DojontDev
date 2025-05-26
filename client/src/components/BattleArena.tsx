@@ -1,4 +1,5 @@
 import React from 'react';
+import left_player from '../assets/Player1_Left.png';
 
 interface BattleArenaProps {
   player1Health: number;
@@ -16,11 +17,11 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   battleId
 }) => {
   return (
-    <div className="relative w-full h-[600px] flex items-center justify-center"
+    <div className="relative w-full h-[920px] flex items-center justify-center"
          style={{
            backgroundImage: 'url("/b.png")', // Puedes usar una imagen de fondo de tu elección
            backgroundSize: 'cover',
-           backgroundPosition: 'center'
+           backgroundPosition: 'cover'
          }}>
       
       {/* Battle ID Display */}
@@ -35,9 +36,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         <div className="flex flex-col items-center">
           <div className="w-48 h-64 relative">
             <div className="absolute inset-0 bg-contain bg-center bg-no-repeat transform scale-x-[-1]"
-                 style={{ backgroundImage: 'url("/samurai1.png")' }} />
+                 style={{ backgroundImage: `url(${left_player})` }} />
           </div>
-          {/* Barra de vida Jugador 1 */}
+          {/* Barra de vida Jugador 1 --'url("/samurai1.png")'--*/}
           <div className="w-48 h-4 bg-gray-300 rounded-full mt-4 overflow-hidden">
             <div 
               className="h-full bg-red-600 transition-all duration-300"
