@@ -124,10 +124,23 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
                     bet: battle.bet
                 });
 
+                // Fetch health for both players
+                const [player1Health, player2Health] = await Promise.all([
+                    fetchPlayerHealth(battle.player1),
+                    fetchPlayerHealth(battle.player2)
+                ]);
+
+                console.log('🎮 Players health:', {
+                    player1Health,
+                    player2Health
+                });
+
                 setBattleState(prev => ({
                     ...prev,
                     battle,
-                    isMyTurn
+                    isMyTurn,
+                    player1Health: player1Health >= 0 ? player1Health : prev.player1Health,
+                    player2Health: player2Health >= 0 ? player2Health : prev.player2Health
                 }));
             } else {
                 console.log('🎮 No battle found for ID:', battleId);
@@ -190,7 +203,6 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
             throw new Error('Attack value must be between 1 and 5');
         }
 
-
         setSubmitted(true);
         setTxnHash(undefined);
         try {
@@ -203,7 +215,10 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
             console.log('🎮 Action executed successfully:', result);
             setTxnHash(result.transaction_hash);
             
-            // Actualizar el estado inmediatamente después de la acción
+            // Esperar un momento para que la transacción se procese
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Actualizar el estado después de la acción
             await fetchBattleState();
             return result;
         } catch (e) {
