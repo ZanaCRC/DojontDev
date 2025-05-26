@@ -80,6 +80,29 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     const [txnHash, setTxnHash] = useState<string>();
     const { account } = useAccount();
 
+    const isMyTurn = useCallback(async (): Promise<boolean> => {
+        if (!account) return false;
+        try {
+            const response = await fetch(VITE_TORII_URL + "/graphql", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query: BATTLE_QUERY,
+                    variables: { battleId: Number(battleId) }
+                }),
+            });
+
+            const result = await response.json();
+            const battle = result.data?.dojontdevBattleModels?.edges[0]?.node;
+            
+            if (!battle) return false;
+            return battle.current_turn === account.address;
+        } catch (error) {
+            console.error("Error checking turn:", error);
+            return false;
+        }
+    }, [account, battleId]);
+
     const fetchPlayerHealth = async (address: string): Promise<number> => {
         try {
             const response = await fetch(VITE_TORII_URL + "/graphql", {
@@ -171,6 +194,7 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
         submitted,
         txnHash,
         performAction,
-        refreshBattleState: fetchBattleState
+        refreshBattleState: fetchBattleState,
+        isMyTurn
     };
 };
