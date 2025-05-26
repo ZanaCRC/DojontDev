@@ -13,6 +13,8 @@ import { useWallet } from './context/WalletContext';
 import { AnimatedGridPattern } from './components/ShadcnComponents/AnimatedGrid';
 import { BorderBeamCard } from './components/AboutDojont';
 import { cn } from './lib/utils';
+import { HowOperate } from './components/HowOperate';
+import { FooterDojont } from './components/FooterDojont';
 const AppContent = () => {
   const { walletConnection } = useWallet();
 
@@ -35,7 +37,7 @@ const AppContent = () => {
         <Header />
         <div className="h-[600px]">
           <Hero />
-          <MorphingText texts={["Conectate", "Juega", "Gana","Dojon't game"]} />
+          <MorphingText texts={["Connect", "Play", "Winn","Dojon't game"]} />
         </div>
         <div className="">
           <ConnectWallet />
@@ -43,9 +45,12 @@ const AppContent = () => {
 
             <BorderBeamCard />
             </div>
+            <HowOperate />
             <MarqueeDemo />
           </div>
+          
         </div>
+        <FooterDojont />
       </div>
     
     </>
