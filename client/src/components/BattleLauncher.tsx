@@ -79,7 +79,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
 
   const validateAmount = () => {
     if (!isValidAmount) {
-      alert("Por favor, selecciona un monto válido.");
+      alert("Please, select a valid amount.");
       return false;
     }
     return true;
@@ -90,39 +90,39 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
     
     try {
       setLoading(true);
-      console.log("Creando batalla con monto:", amountInWei);
+      console.log("Creating a battle with amount:", amountInWei);
 
       const result = await createPlayer(amountInWei as BigNumberish);
       if (result) {
         setTxHash(result.transaction_hash);
-        alert("¡Transacción enviada! Hash: " + result.transaction_hash);
+        alert("¡Transaction Sent! Hash: " + result.transaction_hash);
       }
 
     } catch (error: any) {
-      console.error("Error detallado al crear la batalla:", {
+      console.error("Detailed error when creating the batlle:", {
         error,
         message: error?.message,
         code: error?.code,
         stack: error?.stack
       });
 
-      let errorMessage = "Error al crear la batalla: ";
+      let errorMessage = "Error creating the battle: ";
       
       if (error instanceof Error) {
         if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
           errorMessage = 
-            "No tienes suficientes fondos para pagar la tarifa de transacción.\n\n" +
-            "Por favor:\n" +
-            "1. Visita el faucet de Starknet: https://faucet.goerli.starknet.io\n" +
-            "2. Conecta tu wallet\n" +
-            "3. Solicita ETH de prueba\n" +
-            "4. Espera unos minutos a que se confirme la transacción\n" +
-            "5. Intenta crear la batalla nuevamente";
+            "You don't have sufficient funds to pay the transaction fee.\n\n" +
+            "Please\n" +
+            "1. Visit the Starknet faucet: https://faucet.goerli.starknet.io\n" +
+            "2. Connect your wallet\n" +
+            "3. Request trial ETH\n" +
+            "4. Wait a few minutes for the transaction to be confirmed\n" +
+            "5. Try creating the battle again";
         } else {
           errorMessage += error.message;
         }
       } else {
-        errorMessage += "Error desconocido";
+        errorMessage += "Unknown error occurred";
       }
       
       alert(errorMessage);
@@ -133,9 +133,9 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
 
   const handleBattleClick = async (battleId: number) => {
     // Mostrar diálogo de confirmación
-    const confirmMessage = `¿Estás seguro que quieres unirte a la Batalla #${battleId}?\n\n` +
-      `Monto a apostar: ${amount} ETH\n` +
-      `Esta acción requerirá una transacción en la blockchain y no se puede deshacer.`;
+    const confirmMessage = `¿Are you sure you want to join the battle #${battleId}?\n\n` +
+      `Amount to bet: ${amount} ETH\n` +
+      `This action will require a transaction on the blockchain and cannot be undone.`;
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -143,34 +143,34 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
 
     try {
       setLoading(true);
-      console.log("Uniéndose a la batalla:", battleId);
+      console.log("Joning the battle:", battleId);
       
       const result = await joinBattle(battleId);
       if (result) {
         setTxHash(result.transaction_hash);
-        alert("¡Te has unido a la batalla! Hash: " + result.transaction_hash);
+        alert("¡You have joined the battle! Hash: " + result.transaction_hash);
         // Redirigir a la vista de batalla
         navigate(`/battleview/${battleId}`);
       }
     } catch (error: any) {
-      console.error("Error al unirse a la batalla:", error);
-      let errorMessage = "Error al unirse a la batalla: ";
+      console.error("Error when joining the battle:", error);
+      let errorMessage = "Error when joining the battle: ";
       
       if (error instanceof Error) {
         if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
           errorMessage = 
-            "No tienes suficientes fondos para pagar la tarifa de transacción.\n\n" +
-            "Por favor:\n" +
-            "1. Visita el faucet de Starknet: https://faucet.goerli.starknet.io\n" +
-            "2. Conecta tu wallet\n" +
-            "3. Solicita ETH de prueba\n" +
-            "4. Espera unos minutos a que se confirme la transacción\n" +
-            "5. Intenta unirte a la batalla nuevamente";
+             "You don't have sufficient funds to pay the transaction fee.\n\n" +
+            "Please\n" +
+            "1. Visit the Starknet faucet: https://faucet.goerli.starknet.io\n" +
+            "2. Connect your wallet\n" +
+            "3. Request trial ETH\n" +
+            "4. Wait a few minutes for the transaction to be confirmed\n" +
+            "5. Try creating the battle again";
         } else {
           errorMessage += error.message;
         }
       } else {
-        errorMessage += "Error desconocido";
+        errorMessage += "Unknown error occurred";
       }
       
       alert(errorMessage);
@@ -188,13 +188,13 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
           {!isValidAmount && (
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-700">
-                <strong>Monto no válido:</strong> Por favor, selecciona un monto válido para continuar.
+                <strong>Amount no valid:</strong> Please, select a valid amount to continue.
               </p>
             </div>
           )}
 
           <div className="mb-4">
-            <p className="text-neutral-600">Monto seleccionado:</p>
+            <p className="text-neutral-600">Amount Selected:</p>
             {isValidAmount ? (
               <>
                 <p className="text-xl font-semibold text-purple-600">{amount} ETH</p>
@@ -205,14 +205,14 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
                 </p>
               </>
             ) : (
-              <p className="text-sm text-red-500">Selecciona un monto para continuar</p>
+              <p className="text-sm text-red-500">Select an amount to conitinue</p>
             )}
           </div>
 
           {txHash && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-700">
-                <strong>Transacción enviada:</strong>
+                <strong>Transaction Sent:</strong>
                 <br />
                 Hash: {txHash}
               </p>
@@ -231,15 +231,15 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
                 }
               `}
             >
-              {loading ? 'Procesando...' : 'Crear Batalla'}
+              {loading ? 'Processing...' : 'Create Batle'}
             </button>
           </div>
 
           {/* Lista de batallas disponibles */}
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-              Batallas Disponibles
-              {loadingBattles && <span className="ml-2 text-sm text-gray-500">(Cargando...)</span>}
+              Available Battles
+              {loadingBattles && <span className="ml-2 text-sm text-gray-500">(Loading...)</span>}
             </h3>
             
             {battles.length > 0 ? (
@@ -255,11 +255,11 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-purple-700">Batalla #{battle.battle_id}</p>
+                        <p className="font-medium text-purple-700">Battle #{battle.battle_id}</p>
                         <p className="text-sm text-gray-600">
                           Creador: {getDisplayName(battle.player1)}
                           {!usernames.get(battle.player1) && (
-                            <span className="text-xs text-gray-400 ml-1">(Cargando username...)</span>
+                            <span className="text-xs text-gray-400 ml-1">(Loading username...)</span>
                           )}
                         </p>
                       </div>
@@ -272,7 +272,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
               </div>
             ) : isValidAmount ? (
               <p className="text-gray-500 text-center py-4">
-                No hay batallas disponibles con este monto
+                There are no battles available with this amount
               </p>
             ) : null}
           </div>

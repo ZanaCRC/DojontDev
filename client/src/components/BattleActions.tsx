@@ -21,12 +21,12 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
 
   const validateAccount = () => {
     if (!walletConnection.isConnected || !walletConnection.account) {
-      alert("Por favor, conecta tu wallet primero.");
+      alert("Please, connect your wallet first.");
       return false;
     }
 
     if (!walletConnection.account.address) {
-      alert("La dirección de la wallet no está disponible. Por favor, reconecta tu wallet.");
+      alert("The wallet address is not available. Please reconnect your wallet.");
       return false;
     }
 
@@ -36,7 +36,7 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
   const getStarknetAccount = async () => {
     const starknet = (window as any).starknet;
     if (!starknet) {
-      throw new Error("Starknet no está disponible");
+      throw new Error("Starknet is not available.");
     }
 
     try {
@@ -46,7 +46,7 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
       // Obtener la cuenta actual
       const account = starknet.account;
       if (!account) {
-        throw new Error("No se pudo obtener la cuenta de Starknet");
+        throw new Error("Could not obtain Starknet account.");
       }
 
       // Asegurarse de que la cuenta tenga el provider correcto
@@ -55,7 +55,7 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
         account.provider = provider;
       }
 
-      console.log("Cuenta Starknet obtenida para acción:", {
+      console.log("Starknet account obtained for action:", {
         address: account.address,
         signer: account.signer,
         provider: account.provider,
@@ -64,7 +64,7 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
 
       return account;
     } catch (error) {
-      console.error("Error al obtener la cuenta de Starknet:", error);
+      console.error("Error obtaining starknet account:", error);
       throw error;
     }
   };
@@ -79,7 +79,7 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
       const starknetAccount = await getStarknetAccount();
       
       // Usar la cuenta de Starknet directamente
-      console.log("Usando cuenta Starknet para acción:", starknetAccount);
+      console.log("Using starknet account for action:", starknetAccount);
 
       const dojoActions = await setup(starknetAccount);
       await dojoActions.performAction(
@@ -87,26 +87,26 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
         new CairoCustomEnum({ [selectedAction.type]: undefined }),
         selectedAction.value
       );
-      alert("¡Acción realizada con éxito!");
+      alert("¡Successful action!");
     } catch (error) {
-      console.error("Error al realizar la acción:", error);
-      let errorMessage = "Error al realizar la acción: ";
+      console.error("Error performing the action:", error);
+      let errorMessage = "Error performing the action: ";
       
       if (error instanceof Error) {
         if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
           errorMessage = 
-            "No tienes suficientes fondos para pagar la tarifa de transacción.\n\n" +
-            "Por favor:\n" +
-            "1. Visita el faucet de Starknet: https://faucet.goerli.starknet.io\n" +
-            "2. Conecta tu wallet\n" +
-            "3. Solicita ETH de prueba\n" +
-            "4. Espera unos minutos a que se confirme la transacción\n" +
-            "5. Intenta realizar la acción nuevamente";
+            "You don't have sufficient funds to pay the transaction fee.\n\n" +
+            "Please\n" +
+            "1. Visit the Starknet faucet: https://faucet.goerli.starknet.io\n" +
+            "2. Connect your wallet\n" +
+            "3. Request trial ETH\n" +
+            "4. Wait a few minutes for the transaction to be confirmed\n" +
+            "5. Try creating the battle again";
         } else {
           errorMessage += error.message;
         }
       } else {
-        errorMessage += "Error desconocido";
+        errorMessage += "Unkown Error Ocurred";
       }
       
       alert(errorMessage);
@@ -117,12 +117,12 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
 
   return (
     <div className="p-4 border rounded-xl shadow-md border-gray-200 mt-4">
-      <h3 className="text-xl text-white font-semibold mb-4">Acciones de Batalla</h3>
+      <h3 className="text-xl text-white font-semibold mb-4">Battle Actions</h3>
       
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-200 mb-2">
-            Tipo de Acción
+            Action Type
           </label>
           <div className="grid grid-cols-2 gap-2">
             {(['Attack', 'Defense'] as const).map((type) => (
@@ -145,7 +145,7 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-200 mb-2">
-            Valor de la Acción
+           Action Value 
           </label>
           <input
             type="number"
@@ -172,10 +172,10 @@ export const BattleActions: React.FC<{ battleId: string }> = ({ battleId }) => {
           `}
         >
           {loading 
-            ? 'Realizando acción...' 
+            ? 'Performing Action...' 
             : !walletConnection.isConnected
-              ? 'Conecta tu wallet primero'
-              : 'Realizar Acción'
+              ? 'Coonect your wallet first'
+              : 'Perform Action'
           }
         </button>
       </div>
