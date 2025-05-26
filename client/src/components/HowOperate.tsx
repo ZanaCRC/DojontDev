@@ -60,7 +60,7 @@ export const HowOperate = () => {
             <li className="relative rounded-xl border border-[#9c40ff]/20 bg-[#9c40ff]/5 p-4 transition-all duration-300 hover:bg-[#9c40ff]/10">
               <div className="flex items-start gap-4">
                 <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#9c40ff]/20 text-[#9c40ff] font-semibold">🏆</span>
-                <p className="text-gray-200 pt-1">10% commission on distributed prizes</p>
+                <p className="text-gray-200 pt-1">5% commission on distributed prizes</p>
               </div>
             </li>
             <li className="relative rounded-xl border border-[#9c40ff]/20 bg-[#9c40ff]/5 p-4 transition-all duration-300 hover:bg-[#9c40ff]/10">

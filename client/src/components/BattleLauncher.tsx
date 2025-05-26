@@ -101,16 +101,50 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
         setTxHash(result.transaction_hash);
         setRedirectMessage("¡Transacción enviada! Esperando confirmación...");
         
-        // Esperar a que la transacción se confirme y obtener el ID de la batalla
+        // Esperar a que la transacción se confirme
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Dar tiempo para que la transacción se confirme
+        
+        // Obtener las batallas y buscar la nuestra
         const battlesData = await fetchAvailableBattles(amountInWei);
         if (battlesData && battlesData.length > 0) {
-          setRedirectMessage("¡Batalla creada! Redirigiendo a la arena...");
-          // Obtener la primera batalla disponible (la más antigua)
-          const firstBattle = battlesData[0];
-          // Pequeña pausa para mostrar el mensaje de éxito
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          // Redirigir a la vista de batalla
-          navigate(`/BattleArena/${firstBattle.battle_id}`);  
+          // Buscar la batalla donde somos el creador (player1)
+          const ourBattle = battlesData.find(
+            battle => battle.player1.toLowerCase() === walletConnection.address?.toLowerCase()
+          );
+
+          if (ourBattle) {
+            setRedirectMessage("¡Batalla creada! Redirigiendo a la arena...");
+            // Pequeña pausa para mostrar el mensaje de éxito
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Redirigir a la vista de batalla
+            navigate(`/BattleArena/${ourBattle.battle_id}`);
+          } else {
+            setRedirectMessage("Esperando confirmación de la batalla...");
+            // Si no encontramos la batalla inmediatamente, intentar nuevamente
+            let retries = 0;
+            const maxRetries = 5;
+            const findBattleInterval = setInterval(async () => {
+              const updatedBattles = await fetchAvailableBattles(amountInWei);
+              const newBattle = updatedBattles.find(
+                battle => battle.player1.toLowerCase() === walletConnection.address?.toLowerCase()
+              );
+
+              if (newBattle) {
+                clearInterval(findBattleInterval);
+                setRedirectMessage("¡Batalla creada! Redirigiendo a la arena...");
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                navigate(`/BattleArena/${newBattle.battle_id}`);
+              } else if (retries >= maxRetries) {
+                clearInterval(findBattleInterval);
+                setIsRedirecting(false);
+                alert("No se pudo encontrar la batalla creada. Por favor, verifica en la lista de batallas disponibles.");
+              }
+              retries++;
+            }, 3000); // Intentar cada 3 segundos
+          }
+        } else {
+          setIsRedirecting(false);
+          alert("No se pudo encontrar la batalla creada. Por favor, intenta nuevamente.");
         }
       }
 
