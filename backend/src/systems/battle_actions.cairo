@@ -108,6 +108,7 @@ pub mod battle_actions {
                 current_turn: empty_address,
                 status: BattleStatus::Waiting,
                 winner: Option::None,
+                bet: bet_amount,
             };
             
             // Write the battle to the world

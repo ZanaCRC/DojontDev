@@ -1,8 +1,8 @@
 {
   "world": {
     "class_hash": "0x4c60dc46a8ca8bb47675b7b914053cef769afbf0e340523187336b72bd71d1f",
-    "address": "0xb470c1fd96df5daec389427b5215b6f5e98b4cfb47e981b62bdaec00342adb",
-    "seed": "dojontdev_sepolia_test",
+    "address": "0x79e6f2d77cd757362a20aef53b8bab60a5fb601cce8dbd1991a93a76b3122d8",
+    "seed": "dojontdev_sepolia_test3",
     "name": "DojontDev",
     "entrypoints": [
       "uuid",
@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x1ea84cd064968ff336c6287307299e24f14e393c5e23e3c4dffb8d827de3261",
-      "class_hash": "0x2bb9dfa62ca8cdf96acb554542c81ec2562799233e19c6ddb145318c62fc047",
+      "address": "0x11af81af0d7fe9c1268efc3ffc891ba98e3183d3efb06b7d61493722e0bb8bc",
+      "class_hash": "0x3e4fc2fc8aaf4f1200d0b31afc4cca53bc81986e9c1f6d3dbaf1f8c26b4dfa8",
       "abi": [
         {
           "type": "impl",
@@ -1596,7 +1596,7 @@
   "models": [
     {
       "members": [],
-      "class_hash": "0x63c98e0926316cc40420a7c3b414d7ed6c7e1db92f83c0d7caf3fbecf26c3d",
+      "class_hash": "0x209769f5473f8eafd1b5c057b8263642f1cfebd3cafdc2e56ca1b555d718541",
       "tag": "dojontdev-Battle",
       "selector": "0x710143574174b38bd210efa9458f979a074cc99da33439d3000d7629a43a264"
     },

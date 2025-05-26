@@ -5,8 +5,9 @@ import { constants } from "starknet";
 
 const { VITE_PUBLIC_DEPLOY_TYPE } = import.meta.env;
 const { VITE_PUBLIC_SLOT_ADDRESS } = import.meta.env;
+const { VITE_BATTLE_CONTRACT_ADDRESS } = import.meta.env;
 
-const CONTRACT_ADDRESS_BATTLE_SYSTEM = '0x1ea84cd064968ff336c6287307299e24f14e393c5e23e3c4dffb8d827de3261'
+const CONTRACT_ADDRESS_BATTLE_SYSTEM = VITE_BATTLE_CONTRACT_ADDRESS
 
 const policies: SessionPolicies = {
   contracts:{
@@ -15,10 +16,6 @@ const policies: SessionPolicies = {
         {
           name: "createPlayer",
           entrypoint: "create_player"
-        },
-        {
-          name: "getAvailableBattlesByBet",
-          entrypoint: "get_available_battles_by_bet"
         },
         {
           name: "joinBattle",
@@ -34,22 +31,9 @@ const policies: SessionPolicies = {
   },
 }
 
-// Controller basic configuration
-const colorMode: ColorMode = "dark";
-const theme = "bytebeasts-tamagotchi";
-const namespace = "dojontdev"; 
-const slot = `dojontdev}`; 
 
-const getRpcUrl = () => {
-  switch (VITE_PUBLIC_DEPLOY_TYPE) {
-    case "mainnet":
-      return "https://api.cartridge.gg/x/starknet/mainnet";
-    case "sepolia":
-      return "https://api.cartridge.gg/x/starknet/sepolia";
-    default:
-      return VITE_PUBLIC_SLOT_ADDRESS;
-  }
-};
+
+
 
 const options: ControllerOptions = {
   // @ts-ignore
@@ -58,12 +42,9 @@ const options: ControllerOptions = {
       rpcUrl: "https://api.cartridge.gg/x/starknet/sepolia",
     },
   ],
-  defaultChainId: VITE_PUBLIC_DEPLOY_TYPE === 'mainnet' ?  constants.StarknetChainId.SN_MAIN : constants.StarknetChainId.SN_SEPOLIA,
+  defaultChainId: constants.StarknetChainId.SN_SEPOLIA,
   policies,
-  theme,
-  colorMode,
-  preset: "dojontdev",
-namespace: "dojontdev",
+  namespace: "dojontdev",
   slot: "dojontdev"
 };
 

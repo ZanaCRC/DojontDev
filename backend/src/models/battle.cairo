@@ -20,6 +20,7 @@ pub struct Battle {
     pub player2: ContractAddress,
     pub current_turn: ContractAddress,
     pub status: BattleStatus,
+    pub bet: u128,
     pub winner: Option<ContractAddress>,
 }
 
