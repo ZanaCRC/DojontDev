@@ -78,30 +78,13 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [txnHash, setTxnHash] = useState<string>();
+    const [currentTurn, setCurrentTurn] = useState<string | null>(null);
     const { account } = useAccount();
 
-    const isMyTurn = useCallback(async (): Promise<boolean> => {
-        if (!account) return false;
-        try {
-            const response = await fetch(VITE_TORII_URL + "/graphql", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    query: BATTLE_QUERY,
-                    variables: { battleId: Number(battleId) }
-                }),
-            });
-
-            const result = await response.json();
-            const battle = result.data?.dojontdevBattleModels?.edges[0]?.node;
-            
-            if (!battle) return false;
-            return battle.current_turn === account.address;
-        } catch (error) {
-            console.error("Error checking turn:", error);
-            return false;
-        }
-    }, [account, battleId]);
+    const isMyTurn = useCallback((): boolean => {
+        if (!account || !battleState.battle) return false;
+        return battleState.battle.current_turn.toLowerCase() === account.address?.toLowerCase();
+    }, [account, battleState.battle]);
 
     const fetchPlayerHealth = async (address: string): Promise<number> => {
         try {
@@ -149,6 +132,7 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
                     player1Health,
                     player2Health
                 });
+                setCurrentTurn(battle.current_turn);
             }
         } catch (error) {
             console.error("Error fetching battle state:", error);
@@ -158,10 +142,14 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     }, [battleId]);
 
     const performAction = useCallback(async (actionType: BigNumberish, attackValue: BigNumberish) => {
-        if (!account) return;
+        if (!account || !isMyTurn()) {
+            throw new Error('Not your turn or account not connected');
+        }
+        
         if (actionType === 0 && (Number(attackValue) < 1 || Number(attackValue) > 5)) {
             throw new Error('Attack value must be between 1 and 5');
         }
+
         setSubmitted(true);
         setTxnHash(undefined);
         try {
@@ -179,12 +167,12 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
         } finally {
             setSubmitted(false);
         }
-    }, [account, battleId, fetchBattleState]);
+    }, [account, battleId, fetchBattleState, isMyTurn]);
 
     // Set up automatic refresh of battle state
     useEffect(() => {
         fetchBattleState();
-        const interval = setInterval(fetchBattleState, 5000); // Refresh every 5 seconds
+        const interval = setInterval(fetchBattleState, 3000); // Refresh every 3 seconds
         return () => clearInterval(interval);
     }, [fetchBattleState]);
 
@@ -195,6 +183,7 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
         txnHash,
         performAction,
         refreshBattleState: fetchBattleState,
-        isMyTurn
+        isMyTurn,
+        currentTurn
     };
 };
