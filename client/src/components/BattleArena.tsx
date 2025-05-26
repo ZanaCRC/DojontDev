@@ -4,7 +4,7 @@ import right_player from '../assets/Player2_Right.png';
 import { usePerformAction } from '../hooks/usePerformAction';
 import { useAccount } from '@starknet-react/core';
 import { lookupAddresses } from '@cartridge/controller';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 
 // Definir los keyframes y clases de animación
 const floatingAnimation = `
@@ -139,6 +139,7 @@ export const BattleArena = () => {
   const [damageAnimation, setDamageAnimation] = useState<'left' | 'right' | null>(null);
   const [lastHealthValues, setLastHealthValues] = useState({ player1: 100, player2: 100 });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Inyectar los estilos de animación
@@ -368,6 +369,59 @@ export const BattleArena = () => {
     };
   }, [refreshBattleState]);
 
+  // Add check for completed battle
+  useEffect(() => {
+    if (battleState.battle?.status === 'Completed') {
+      // Stop background music when battle ends
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    }
+  }, [battleState.battle?.status]);
+
+  // Pantalla de batalla completada
+  if (battleState.battle?.status === 'Completed') {
+    const winner = battleState.player1Health > 0 ? battleState.battle.player1 : battleState.battle.player2;
+    const isWinner = account?.address === winner;
+
+    return (
+      <div 
+        className="relative w-full h-screen flex items-center justify-center transition-opacity duration-300"
+        style={{
+          backgroundImage: 'url("/Pasted_image.png")', 
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-gray-900/90 p-8 rounded-xl border-2 border-[#4F7CEC] shadow-2xl max-w-md w-full mx-4">
+            <h2 className="text-3xl font-bold text-center text-white mb-6">
+              ¡Batalla Terminada!
+            </h2>
+            <div className="text-center mb-8">
+              <p className="text-xl text-[#4F7CEC] font-semibold mb-2">
+                {isWinner ? '¡Has Ganado!' : '¡Has Perdido!'}
+              </p>
+              <p className="text-gray-300">
+                Ganador: {getDisplayName(winner)}
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <button
+                onClick={() => navigate('/battleview')}
+                className="px-6 py-3 bg-[#4F7CEC] hover:bg-[#3D63C9] text-white font-semibold rounded-lg 
+                         transform hover:scale-105 transition-all duration-300 shadow-lg"
+              >
+                Volver a Batallas
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Pantalla de espera
   if (isWaiting && battleState.battle?.status !== 'InProgress') {
     return (
@@ -386,7 +440,7 @@ export const BattleArena = () => {
     );
   }
 
-  // Pantalla de carga inicial con fade
+  // Pantalla de carga inicial
   if (isInitialLoading) {
     return (
       <div className="fixed inset-0 bg-black/90 flex items-center justify-center transition-opacity duration-300">
