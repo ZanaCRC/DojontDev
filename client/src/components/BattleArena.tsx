@@ -1,5 +1,6 @@
 import React from 'react';
 import left_player from '../assets/Player1_Left.png';
+import right_player from '../assets/Player2_Right.png';
 
 interface BattleArenaProps {
   player1Health: number;
@@ -73,7 +74,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         <div className="flex flex-col items-center">
           <div className="w-48 h-64 relative">
             <div className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-                 style={{ backgroundImage: 'url("/samurai1.png")' }} />
+                 style={{ backgroundImage: `url(${right_player})` }} />
           </div>
           {/* Barra de vida Jugador 2 */}
           <div className="w-48 h-4 bg-gray-300 rounded-full mt-4 overflow-hidden">
