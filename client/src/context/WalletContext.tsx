@@ -40,20 +40,20 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const connectWallet = async (wallet: any) => {
     try {
-      console.log("WalletContext - Iniciando conexión de wallet:", {
+      console.log("WalletContext - Starting wallet connection:", {
         walletData: wallet,
         currentConnection: walletConnection
       });
 
       if (!wallet) {
-        throw new Error("No se proporcionó una wallet válida");
+        throw new Error("No valid wallet provided");
       }
 
       if (!wallet.address) {
-        throw new Error("La wallet no tiene dirección");
+        throw new Error("Wallet has no address");
       }
 
-      // Crear el objeto de cuenta personalizado
+      // Create custom account object
       const customAccount: CustomAccount = {
         address: wallet.address,
         provider: wallet.provider || wallet.account?.provider,
@@ -61,7 +61,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         execute: wallet.account?.execute?.bind(wallet.account)
       };
 
-      console.log("WalletContext - Cuenta personalizada creada:", {
+      console.log("WalletContext - Custom account created:", {
         address: customAccount.address,
         hasProvider: Boolean(customAccount.provider),
         hasSigner: Boolean(customAccount.signer),
@@ -74,17 +74,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         address: wallet.address,
       });
 
-      console.log("WalletContext - Wallet conectada exitosamente");
+      console.log("WalletContext - Wallet connected successfully");
 
     } catch (error) {
-      console.error("WalletContext - Error al conectar wallet:", error);
+      console.error("WalletContext - Error connecting wallet:", error);
       disconnectWallet();
-      throw error; // Re-lanzar el error para manejarlo en el componente
+      throw error;
     }
   };
 
   const disconnectWallet = () => {
-    console.log("WalletContext - Desconectando wallet");
+    console.log("WalletContext - Disconnecting wallet");
     setWalletConnection({
       isConnected: false,
       account: null,

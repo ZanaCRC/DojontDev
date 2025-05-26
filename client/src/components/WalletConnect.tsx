@@ -26,19 +26,19 @@ export const WalletConnect: React.FC = () => {
       console.log("Wallet inicial:", wallet);
 
       if (!wallet) {
-        throw new Error("No se pudo conectar con la wallet");
+        throw new Error("Could not connect to wallet");
       }
 
       try {
-        // Habilitar la wallet
+        // Enable wallet
         await wallet.enable();
         
-        // Verificar que tenemos los datos necesarios
+        // Verify we have the necessary data
         if (!wallet.isConnected || !wallet.account || !wallet.selectedAddress) {
-          throw new Error("No se obtuvieron los datos necesarios de la wallet");
+          throw new Error("Could not get necessary wallet data");
         }
 
-        console.log("Wallet habilitada:", {
+        console.log("Wallet enabled:", {
           isConnected: wallet.isConnected,
           account: wallet.account,
           address: wallet.selectedAddress,
@@ -46,7 +46,7 @@ export const WalletConnect: React.FC = () => {
           signer: wallet.account.signer
         });
 
-        // Crear el objeto de cuenta para el contexto
+        // Create account object for context
         const starknetWallet = {
           account: wallet.account,
           address: wallet.selectedAddress,
@@ -54,16 +54,16 @@ export const WalletConnect: React.FC = () => {
           isConnected: wallet.isConnected
         };
 
-        // Pasar la wallet al contexto
+        // Pass wallet to context
         await connectWallet(starknetWallet);
 
       } catch (enableError) {
-        console.error("Error al habilitar la wallet:", enableError);
-        throw new Error("Error al habilitar la wallet: " + (enableError as Error).message);
+        console.error("Error enabling wallet:", enableError);
+        throw new Error("Error enabling wallet: " + (enableError as Error).message);
       }
     } catch (error) {
-      console.error('Error en el proceso de conexión:', error);
-      alert('Error al conectar wallet: ' + (error as Error).message);
+      console.error('Error in connection process:', error);
+      alert('Error connecting wallet: ' + (error as Error).message);
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +74,7 @@ export const WalletConnect: React.FC = () => {
       await disconnect();
       disconnectWallet();
     } catch (error) {
-      console.error('Error al desconectar wallet:', error);
+      console.error('Error disconnecting wallet:', error);
     }
   };
 
@@ -92,7 +92,7 @@ export const WalletConnect: React.FC = () => {
             }
           `}
         > 
-          <p className="z-50">{isLoading ? 'Conectando...' : 'Conectar Wallet'}</p>
+          <p className="z-50">{isLoading ? 'Connecting...' : 'Connect Wallet'}</p>
         </button>
       ) : (
         <div className="flex items-center gap-4">
@@ -103,7 +103,7 @@ export const WalletConnect: React.FC = () => {
             onClick={handleDisconnect}
             className="px-4 py-2 rounded text-white font-medium bg-red-500 hover:bg-red-600 active:bg-red-700 transition-all duration-200"
           >
-            Desconectar
+            Disconnect
           </button>
         </div>
       )}

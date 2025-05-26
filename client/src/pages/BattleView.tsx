@@ -98,7 +98,7 @@ export function BattleView() {
         <div className="text-white flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4F7CEC]"></div>
           <div className="text-xl font-semibold bg-gradient-to-r from-[#4F7CEC] to-[#9c40ff] text-transparent bg-clip-text">
-            Verificando conexión...
+            Verifying connection...
           </div>
         </div>
       </div>
@@ -109,7 +109,7 @@ export function BattleView() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-xl font-semibold bg-gradient-to-r from-[#4F7CEC] to-[#9c40ff] text-transparent bg-clip-text">
-          No hay conexión activa
+          No active connection
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ export function BattleView() {
           </h1>
           <div className="flex items-center gap-4">
             <div className="bg-gradient-to-r from-[#4F7CEC]/10 to-[#9c40ff]/10 backdrop-blur-md rounded-xl px-6 py-3 border border-[#4F7CEC]/20 transition-all duration-300 hover:bg-gray-50/[.05]">
-              <p className="text-sm text-white/80">Conectado como:</p>
+              <p className="text-sm text-white/80">Connected as:</p>
               <p className="font-mono text-[#4F7CEC] font-semibold">{address.slice(0, 6)}...{address.slice(-4)}</p>
             </div>
             <Button 
@@ -132,14 +132,14 @@ export function BattleView() {
                          hover:scale-105 shadow-lg hover:shadow-[#4F7CEC]/50"
               onClick={handleDisconnect}
             >
-              Desconectar
+              Disconnect
             </Button>
           </div>
         </div>
 
         <div className="bg-gradient-to-r from-[#4F7CEC]/10 to-[#9c40ff]/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-[#4F7CEC]/20 transition-all duration-300 hover:bg-gray-50/[.05]">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-[#4F7CEC] to-[#9c40ff] text-transparent bg-clip-text mb-6">
-            Selecciona el monto de la batalla
+            Select the battle amount
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {AMOUNTS.map((amount) => (
