@@ -43,6 +43,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Hello: Falló la inicialización de la aplicación:", error);
+  console.error("App initialization failed:", error);
 });
 

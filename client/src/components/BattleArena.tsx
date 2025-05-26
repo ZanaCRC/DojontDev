@@ -104,11 +104,11 @@ const floatingAnimation = `
 const DamageNumber = ({ damage, position }: { damage: number, position: 'left' | 'right' }) => {
   return (
     <div 
-      className="absolute text-6xl font-bold text-red-600 damage-number z-50"
+      className="absolute text-6xl font-bold text-[#4F7CEC] damage-number z-50"
       style={{
         top: '40%',
         [position]: '30%',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+        textShadow: '3px 3px 6px rgba(0,0,0,0.7)'
       }}
     >
       -{damage}
@@ -386,7 +386,7 @@ export const BattleArena = () => {
 
     return (
       <div 
-        className="relative w-full h-screen flex items-center justify-center transition-opacity duration-300"
+        className="relative w-full h-screen flex items-center justify-center"
         style={{
           backgroundImage: 'url("/Pasted_image.png")', 
           backgroundSize: 'cover',
@@ -394,26 +394,27 @@ export const BattleArena = () => {
           backgroundRepeat: 'no-repeat'
         }}
       >
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-gray-900/90 p-8 rounded-xl border-2 border-[#4F7CEC] shadow-2xl max-w-md w-full mx-4">
-            <h2 className="text-3xl font-bold text-center text-white mb-6">
-              ¡Batalla Terminada!
+        <div className="fixed inset-0 bg-[#1A2C38]/90 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-[#1A2C38] p-8 rounded-xl border-2 border-[#4F7CEC] shadow-2xl max-w-md w-full mx-4">
+            <h2 className="text-3xl font-bold text-center text-[#4F7CEC] mb-6">
+              Battle Completed!
             </h2>
             <div className="text-center mb-8">
-              <p className="text-xl text-[#4F7CEC] font-semibold mb-2">
-                {isWinner ? '¡Has Ganado!' : '¡Has Perdido!'}
+              <p className="text-xl text-[#E2E8F0] font-semibold mb-2">
+                {isWinner ? 'You Won!' : 'You Lost!'}
               </p>
-              <p className="text-gray-300">
-                Ganador: {getDisplayName(winner)}
+              <p className="text-[#94A3B8]">
+                Winner: {getDisplayName(winner)}
               </p>
             </div>
             <div className="flex justify-center">
               <button
                 onClick={() => navigate('/battleview')}
                 className="px-6 py-3 bg-[#4F7CEC] hover:bg-[#3D63C9] text-white font-semibold rounded-lg 
-                         transform hover:scale-105 transition-all duration-300 shadow-lg"
+                         transform hover:scale-105 transition-all duration-300 shadow-lg
+                         hover:shadow-[#4F7CEC]/50 border border-[#4F7CEC]/30"
               >
-                Volver a Batallas
+                Back to Battles
               </button>
             </div>
           </div>
@@ -425,15 +426,15 @@ export const BattleArena = () => {
   // Pantalla de espera
   if (isWaiting && battleState.battle?.status !== 'InProgress') {
     return (
-      <div className="fixed inset-0 bg-black/90 flex items-center justify-center transition-opacity duration-300">
+      <div className="fixed inset-0 bg-[#1A2C38]/95 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#4F7CEC] mx-auto"></div>
-          <h2 className="text-2xl text-white font-bold">Esperando oponente...</h2>
-          <p className="text-gray-400">
+          <h2 className="text-2xl text-[#4F7CEC] font-bold">Waiting for opponent...</h2>
+          <p className="text-[#E2E8F0]">
             Battle ID: {battleId}
           </p>
-          <p className="text-sm text-gray-500">
-            La batalla comenzará automáticamente cuando un oponente se una
+          <p className="text-sm text-[#94A3B8]">
+            The battle will start automatically when an opponent joins
           </p>
         </div>
       </div>
@@ -443,8 +444,8 @@ export const BattleArena = () => {
   // Pantalla de carga inicial
   if (isInitialLoading) {
     return (
-      <div className="fixed inset-0 bg-black/90 flex items-center justify-center transition-opacity duration-300">
-        <div className="text-2xl text-white flex flex-col items-center gap-4">
+      <div className="fixed inset-0 bg-[#1A2C38]/95 flex items-center justify-center">
+        <div className="text-2xl text-[#4F7CEC] flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4F7CEC]"></div>
           <div>Loading battle data...</div>
         </div>
@@ -457,7 +458,7 @@ export const BattleArena = () => {
 
   return (
     <div 
-      className="relative w-full h-screen flex items-center justify-center transition-opacity duration-300"
+      className="relative w-full h-screen flex items-center justify-center"
       style={{
         backgroundImage: 'url("/Pasted_image.png")', 
         backgroundSize: 'cover',
@@ -470,42 +471,85 @@ export const BattleArena = () => {
         <DamageNumber damage={damageDisplay.damage} position={damageDisplay.position} />
       )}
 
-      {/* Audio Controls */}
-      <div className="absolute top-16 right-4 text-white">
-        <button
-          className="px-3 py-1 bg-gray-800/50 rounded hover:bg-gray-700/50 transition-colors"
-          onClick={() => {
-            setIsMusicPlaying(!isMusicPlaying);
-            if (audioRef.current) {
-              if (audioRef.current.paused) {
-                audioRef.current.play().catch(console.warn);
-              } else {
-                audioRef.current.pause();
-              }
+      {/* Battle Info Header */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start">
+        {/* Battle ID y Estado */}
+        <div className="bg-[#1A2C38]/90 p-3 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="text-[#4F7CEC] font-bold text-lg">
+              Battle #{battleId}
+            </div>
+            <div className="h-4 w-4 rounded-full bg-[#4F7CEC] animate-pulse"></div>
+          </div>
+          <div className="text-[#E2E8F0] text-sm mt-1">
+            Estado: {battleState.battle?.status === 'InProgress' ? 
+              <span className="text-green-400">In Progress</span> : 
+              <span className="text-yellow-400">Waiting</span>
             }
-          }}
-        >
-          {!isMusicPlaying ? '🔇' : '🔊'}
-        </button>
+          </div>
+        </div>
+
+        {/* Audio Controls and Debug Info */}
+        <div className="flex flex-col items-end gap-2">
+          <button
+            className="px-4 py-2 bg-[#1A2C38]/90 text-[#4F7CEC] rounded-lg hover:bg-[#2D3748] transition-all
+                     shadow-lg hover:shadow-[#4F7CEC]/20 border border-[#4F7CEC]/30 backdrop-blur-sm
+                     flex items-center gap-2"
+            onClick={() => {
+              setIsMusicPlaying(!isMusicPlaying);
+              if (audioRef.current) {
+                if (audioRef.current.paused) {
+                  audioRef.current.play().catch(console.warn);
+                } else {
+                  audioRef.current.pause();
+                }
+              }
+            }}
+          >
+            {!isMusicPlaying ? '🔇 Music Off' : '🔊 Music On'}
+          </button>
+
+          <div className="bg-[#1A2C38]/90 p-3 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-[#E2E8F0] text-sm">
+                <div className="w-2 h-2 rounded-full bg-[#4F7CEC]"></div>
+                <span className="text-[#94A3B8]">Address:</span> 
+                {account?.address ? 
+                  <span className="font-mono">{`${account.address.slice(0, 6)}...${account.address.slice(-4)}`}</span> : 
+                  <span className="text-red-400">Not Connected</span>
+                }
+              </div>
+              <div className="flex items-center gap-2 text-[#E2E8F0] text-sm">
+                <div className="w-2 h-2 rounded-full bg-[#4F7CEC]"></div>
+                <span className="text-[#94A3B8]">Turn:</span> 
+                {currentTurn !== 'Unknown' ? 
+                  <span className="font-mono">{`${currentTurn.slice(0, 6)}...${currentTurn.slice(-4)}`}</span> : 
+                  <span className="text-yellow-400">Unknown</span>
+                }
+              </div>
+              <div className="flex items-center gap-2 text-[#E2E8F0] text-sm">
+                <div className="w-2 h-2 rounded-full bg-[#4F7CEC]"></div>
+                <span className="text-[#94A3B8]">My Turn:</span> 
+                {myTurn ? 
+                  <span className="text-green-400">Yes</span> : 
+                  <span className="text-red-400">No</span>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Battle ID Display */}
-      <div className="absolute top-4 left-4 text-white font-bold text-lg [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-        Battle #{battleId}
-      </div>
-      
-      {/* Debug Info */}
-      <div className="absolute top-4 right-4 text-white text-sm text-right [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-        <div>My Address: {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Not connected'}</div>
-        <div>Current Turn: {currentTurn !== 'Unknown' ? `${currentTurn.slice(0, 6)}...${currentTurn.slice(-4)}` : 'Unknown'}</div>
-        <div>Is My Turn: {myTurn ? 'Yes' : 'No'}</div>
-        <div>Battle Status: {battleState.battle?.status || 'Unknown'}</div>
-      </div>
-      
-      {/* Contenedor principal */}
+      {/* Players Container */}
       <div className="absolute inset-0 flex items-center justify-between px-12">
-        {/* Jugador 1 (Izquierda) */}
+        {/* Player 1 (Left) */}
         <div className="flex flex-col items-center">
+          <div className="bg-[#1A2C38]/80 p-4 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm mb-4">
+            <div className="text-[#4F7CEC] font-bold text-center mb-2">
+              {battleState.battle?.player1 ? getDisplayName(battleState.battle.player1) : 'Unknown'}
+            </div>
+          </div>
+          
           <div className="w-48 h-64 relative">
             <div 
               className={`absolute inset-0 bg-contain bg-center bg-no-repeat ${
@@ -515,49 +559,67 @@ export const BattleArena = () => {
               style={{ backgroundImage: `url(${left_player})` }} 
             />
           </div>
-          {/* Barra de vida Jugador 1 */}
-          <div className="w-48 h-4 bg-gray-300 rounded-full mt-4 overflow-hidden">
-            <div 
-              className="h-full bg-red-600 transition-all duration-500 ease-out"
-              style={{ width: `${battleState.player1Health}%` }}
-            />
-          </div>
-          <span className="mt-2 text-white font-bold [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-            {battleState.player1Health}/100 HP
-          </span>
-          <span className="mt-1 text-white text-sm [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-            {battleState.battle?.player1 ? getDisplayName(battleState.battle.player1) : 'Unknown'}
-          </span>
-        </div>
 
-        {/* Área central con botón de ataque */}
-        <div className="flex flex-col items-center z-10">
-          {myTurn ? (
-            <button
-              onClick={handleAttack}
-              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg 
-                       transform hover:scale-105 transition-all duration-300 shadow-lg
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!myTurn || isAttacking}
-            >
-              {isAttacking ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                  <span>Attacking...</span>
-                </div>
-              ) : (
-                "ATTACK"
-              )}
-            </button>
-          ) : (
-            <div className="px-8 py-4 bg-gray-600 text-white font-bold rounded-lg">
-              OPPONENT'S TURN
+          {/* Stats Container */}
+          <div className="mt-4 bg-[#1A2C38]/80 p-4 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm w-48">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[#94A3B8] text-sm">HP</span>
+              <span className="text-[#4F7CEC] font-bold">{battleState.player1Health}/100</span>
             </div>
-          )}
+            <div className="w-full h-4 bg-[#1A2C38] rounded-full overflow-hidden shadow-lg border border-[#4F7CEC]/30">
+              <div 
+                className="h-full bg-gradient-to-r from-[#4F7CEC] to-[#3D63C9] transition-all duration-500 ease-out"
+                style={{ width: `${battleState.player1Health}%` }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Jugador 2 (Derecha) */}
+        {/* Central Attack Area */}
+        <div className="flex flex-col items-center z-10">
+          <div className="bg-[#1A2C38]/80 p-6 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm">
+            {myTurn ? (
+              <button
+                onClick={handleAttack}
+                className="px-8 py-4 bg-gradient-to-r from-[#4F7CEC] to-[#3D63C9] hover:from-[#3D63C9] hover:to-[#2D4B9E] 
+                         text-white font-bold rounded-lg transform hover:scale-105 transition-all duration-300 
+                         shadow-lg hover:shadow-[#4F7CEC]/50 disabled:opacity-50 disabled:cursor-not-allowed
+                         disabled:hover:scale-100 border border-[#4F7CEC]/30
+                         min-w-[200px]"
+                disabled={!myTurn || isAttacking}
+              >
+                {isAttacking ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                    <span>Attacking...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <span>⚔️</span>
+                    <span>ATTACK</span>
+                  </div>
+                )}
+              </button>
+            ) : (
+              <div className="px-8 py-4 bg-[#1A2C38] text-[#94A3B8] font-bold rounded-lg shadow-lg border border-[#4F7CEC]/30
+                            min-w-[200px] text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-pulse">⏳</div>
+                  <span>OPPONENT'S TURN</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Player 2 (Right) */}
         <div className="flex flex-col items-center">
+          <div className="bg-[#1A2C38]/80 p-4 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm mb-4">
+            <div className="text-[#4F7CEC] font-bold text-center mb-2">
+              {battleState.battle?.player2 ? getDisplayName(battleState.battle.player2) : 'Unknown'}
+            </div>
+          </div>
+          
           <div className="w-48 h-64 relative">
             <div 
               className={`absolute inset-0 bg-contain bg-center bg-no-repeat ${
@@ -567,19 +629,20 @@ export const BattleArena = () => {
               style={{ backgroundImage: `url(${right_player})` }} 
             />
           </div>
-          {/* Barra de vida Jugador 2 */}
-          <div className="w-48 h-4 bg-gray-300 rounded-full mt-4 overflow-hidden">
-            <div 
-              className="h-full bg-red-600 transition-all duration-500 ease-out"
-              style={{ width: `${battleState.player2Health}%` }}
-            />
+
+          {/* Stats Container */}
+          <div className="mt-4 bg-[#1A2C38]/80 p-4 rounded-lg border border-[#4F7CEC]/30 backdrop-blur-sm w-48">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[#94A3B8] text-sm">HP</span>
+              <span className="text-[#4F7CEC] font-bold">{battleState.player2Health}/100</span>
+            </div>
+            <div className="w-full h-4 bg-[#1A2C38] rounded-full overflow-hidden shadow-lg border border-[#4F7CEC]/30">
+              <div 
+                className="h-full bg-gradient-to-r from-[#4F7CEC] to-[#3D63C9] transition-all duration-500 ease-out"
+                style={{ width: `${battleState.player2Health}%` }}
+              />
+            </div>
           </div>
-          <span className="mt-2 text-white font-bold [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-            {battleState.player2Health}/100 HP
-          </span>
-          <span className="mt-1 text-white text-sm [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-            {battleState.battle?.player2 ? getDisplayName(battleState.battle.player2) : 'Unknown'}
-          </span>
         </div>
       </div>
     </div>

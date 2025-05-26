@@ -93,53 +93,50 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
     try {
       setLoading(true);
       setIsRedirecting(true);
-      setRedirectMessage("Creando batalla...");
+      setRedirectMessage("Creating battle...");
       console.log("Creating a battle with amount:", amountInWei);
 
       const result = await createPlayer(amountInWei as BigNumberish);
       if (result) {
         setTxHash(result.transaction_hash);
-        setRedirectMessage("¡Batalla creada! Buscando ID...");
+        setRedirectMessage("Battle created! Looking for ID...");
 
-        // Función para intentar encontrar la batalla
+        // Function to try to find the battle
         const findBattle = async (retries = 5): Promise<number | null> => {
           for (let i = 0; i < retries; i++) {
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            console.log(`\nIntento ${i + 1}: Buscando batallas con monto:`, amountInWei);
+            console.log(`\nAttempt ${i + 1}: Looking for battles with amount:`, amountInWei);
             const battlesData = await fetchAvailableBattles(amountInWei);
-            console.log('Batallas encontradas:', battlesData);
+            console.log('Battles found:', battlesData);
 
-            // Buscar la batalla más reciente en estado "Waiting"
+            // Look for the most recent battle in "Waiting" state
             const recentBattle = battlesData?.find(battle => battle.status === 'Waiting');
             
             if (recentBattle) {
-              console.log('Batalla encontrada:', recentBattle);
+              console.log('Battle found:', recentBattle);
               return recentBattle.battle_id;
             }
             
-            setRedirectMessage(`Buscando batalla... (intento ${i + 1}/${retries})`);
+            setRedirectMessage(`Looking for battle... (attempt ${i + 1}/${retries})`);
           }
           return null;
         };
 
-        // Intentar encontrar la batalla con reintentos
+        // Try to find the battle with retries
         const battleId = await findBattle();
-        
 
         if (battleId) {
-          setRedirectMessage("¡Batalla encontrada! Redirigiendo...");
+          setRedirectMessage("Battle found! Redirecting...");
           await new Promise(resolve => setTimeout(resolve, 1000));
-          // Redirigir a la batalla y el componente BattleArena manejará la espera del estado
           navigate(`/BattleArena/${battleId}`);
         } else {
           throw new Error(
-            "No se pudo encontrar la batalla creada. Por favor:\n\n" +
-            "1. Verifica que la transacción se haya confirmado en el explorador\n" +
-            "2. Revisa la consola para ver los detalles de la búsqueda\n" +
-            "3. Intenta refrescar la página en unos momentos"
+            "Could not find the created battle. Please:\n\n" +
+            "1. Verify that the transaction has been confirmed in the explorer\n" +
+            "2. Check the console for search details\n" +
+            "3. Try refreshing the page in a few moments"
           );
-
         }
       }
 
@@ -179,8 +176,8 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
   };
 
   const handleBattleClick = async (battleId: number) => {
-    // Mostrar diálogo de confirmación
-    const confirmMessage = `¿Are you sure you want to join the battle #${battleId}?\n\n` +
+    // Show confirmation dialog
+    const confirmMessage = `Are you sure you want to join battle #${battleId}?\n\n` +
       `Amount to bet: ${amount} ETH\n` +
       `This action will require a transaction on the blockchain and cannot be undone.`;
 
@@ -191,13 +188,13 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
     try {
       setLoading(true);
       setIsRedirecting(true);
-      setRedirectMessage("Uniéndose a la batalla...");
-      console.log("Joining the battle:", battleId);
+      setRedirectMessage("Joining battle...");
+      console.log("Joining battle:", battleId);
       
       const result = await joinBattle(battleId);
       if (result) {
         setTxHash(result.transaction_hash);
-        setRedirectMessage("¡Te has unido a la batalla! Redirigiendo a la arena...");
+        setRedirectMessage("You've joined the battle! Redirecting to arena...");
         await new Promise(resolve => setTimeout(resolve, 1500));
         navigate(`/BattleArena/${battleId}`);
       }
@@ -209,13 +206,13 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
       if (error instanceof Error) {
         if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
           errorMessage = 
-             "You don't have sufficient funds to pay the transaction fee.\n\n" +
+            "You don't have sufficient funds to pay the transaction fee.\n\n" +
             "Please\n" +
             "1. Visit the Starknet faucet: https://faucet.goerli.starknet.io\n" +
             "2. Connect your wallet\n" +
             "3. Request trial ETH\n" +
             "4. Wait a few minutes for the transaction to be confirmed\n" +
-            "5. Try creating the battle again";
+            "5. Try joining the battle again";
         } else {
           errorMessage += error.message;
         }
@@ -243,7 +240,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
       )}
 
       <div className="p-6 border rounded-xl shadow-md border-gray-900">
-        <h2 className="text-2xl text-neutral-200 font-semibold mb-4">Batalla</h2>
+        <h2 className="text-2xl text-neutral-200 font-semibold mb-4">Battle</h2>
         
         <div className="space-y-4">
           {!isValidAmount && (
