@@ -32,6 +32,30 @@ const floatingAnimation = `
     }
   }
 
+  @keyframes attackLeft {
+    0% { transform: translateX(0) scale(-1, 1); }
+    50% { transform: translateX(100px) scale(-1, 1); }
+    100% { transform: translateX(0) scale(-1, 1); }
+  }
+
+  @keyframes attackRight {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-100px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes damageShake {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(-8px, 8px) scale(1.05); }
+    50% { transform: translate(8px, -8px) scale(1.05); }
+    75% { transform: translate(-8px, -8px) scale(1.05); }
+  }
+
+  @keyframes damageFlash {
+    0%, 100% { filter: none; }
+    50% { filter: brightness(3) saturate(150%) sepia(100%) hue-rotate(-50deg); }
+  }
+
   .float-left {
     animation: floating 3s ease-in-out infinite;
   }
@@ -39,7 +63,58 @@ const floatingAnimation = `
   .float-right {
     animation: floatingRight 3s ease-in-out infinite;
   }
+
+  .attack-left {
+    animation: attackLeft 1s ease-in-out;
+  }
+
+  .attack-right {
+    animation: attackRight 1s ease-in-out;
+  }
+
+  .damage-shake-left {
+    animation: damageShake 0.5s ease-in-out, damageFlash 0.5s ease-in-out;
+    animation-fill-mode: forwards;
+  }
+
+  .damage-shake-right {
+    animation: damageShake 0.5s ease-in-out, damageFlash 0.5s ease-in-out;
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes damageNumber {
+    0% { 
+      opacity: 0;
+      transform: translateY(0);
+    }
+    20% {
+      opacity: 1;
+    }
+    100% { 
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+  }
+
+  .damage-number {
+    animation: damageNumber 1s ease-out forwards;
+  }
 `;
+
+const DamageNumber = ({ damage, position }: { damage: number, position: 'left' | 'right' }) => {
+  return (
+    <div 
+      className="absolute text-6xl font-bold text-red-600 damage-number z-50"
+      style={{
+        top: '40%',
+        [position]: '30%',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+      }}
+    >
+      -{damage}
+    </div>
+  );
+};
 
 export const BattleArena = () => {
   const { battleId } = useParams();
@@ -59,6 +134,11 @@ export const BattleArena = () => {
   } = usePerformAction({ battleId: battleId || "0" });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [usernames, setUsernames] = useState<Map<string, string>>(new Map());
+  const [attackAnimation, setAttackAnimation] = useState<'left' | 'right' | null>(null);
+  const [damageDisplay, setDamageDisplay] = useState<{ damage: number, position: 'left' | 'right' } | null>(null);
+  const [damageAnimation, setDamageAnimation] = useState<'left' | 'right' | null>(null);
+  const [lastHealthValues, setLastHealthValues] = useState({ player1: 100, player2: 100 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     // Inyectar los estilos de animación
@@ -177,15 +257,37 @@ export const BattleArena = () => {
   const handleAttack = async () => {
     try {
       setIsAttacking(true);
-      // Reproducir sonido de ataque
       if (attackSoundRef.current) {
-        attackSoundRef.current.currentTime = 0; // Reiniciar el sonido
+        attackSoundRef.current.currentTime = 0;
         attackSoundRef.current.play().catch(console.error);
       }
       
       const attackValue = Math.floor(Math.random() * 5) + 1;
+      const isPlayer1 = account?.address === battleState.battle?.player1;
+      
+      // Set attack animation
+      setAttackAnimation(isPlayer1 ? 'left' : 'right');
+      
+      // Show damage number
+      setDamageDisplay({
+        damage: attackValue,
+        position: isPlayer1 ? 'right' : 'left'
+      });
+
+      // Perform the attack
       await performAction(0, attackValue);
+
+      // Wait for animations
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Clear animations
+      setAttackAnimation(null);
+      setDamageDisplay(null);
+
+      // Update battle state after animations
+      setIsRefreshing(true);
       await refreshBattleState();
+      setIsRefreshing(false);
     } catch (error) {
       console.error("Error performing attack:", error);
     } finally {
@@ -216,6 +318,55 @@ export const BattleArena = () => {
       }
     };
   }, [isWaiting, battleState.battle?.status, refreshBattleState]);
+
+  // Modify the health change effect to use lastHealthValues
+  useEffect(() => {
+    if (isRefreshing || isAttacking) return; // Don't trigger during refresh or attack
+
+    const isPlayer1 = account?.address === battleState.battle?.player1;
+    const currentHealth = isPlayer1 ? battleState.player1Health : battleState.player2Health;
+    const lastHealth = isPlayer1 ? lastHealthValues.player1 : lastHealthValues.player2;
+
+    if (currentHealth < lastHealth) {
+      // Damage taken
+      setDamageAnimation(isPlayer1 ? 'left' : 'right');
+      setTimeout(() => setDamageAnimation(null), 500);
+    }
+
+    // Update last health values
+    setLastHealthValues({
+      player1: battleState.player1Health,
+      player2: battleState.player2Health
+    });
+  }, [battleState.player1Health, battleState.player2Health]);
+
+  // Modify the refresh interval
+  useEffect(() => {
+    console.log('🎮 Setting up battle state refresh');
+    
+    // Initial fetch
+    const initialFetch = async () => {
+      setIsRefreshing(true);
+      await refreshBattleState();
+      setIsRefreshing(false);
+    };
+    initialFetch();
+    
+    // Set up interval with longer delay and check for animations
+    const interval = setInterval(async () => {
+      if (!isAttacking && !damageAnimation) {
+        console.log('🎮 Auto-refreshing battle state');
+        setIsRefreshing(true);
+        await refreshBattleState();
+        setIsRefreshing(false);
+      }
+    }, 3000); // Increased to 3 seconds
+    
+    return () => {
+      console.log('🎮 Cleaning up battle state refresh');
+      clearInterval(interval);
+    };
+  }, [refreshBattleState]);
 
   // Pantalla de espera
   if (isWaiting && battleState.battle?.status !== 'InProgress') {
@@ -260,6 +411,11 @@ export const BattleArena = () => {
         backgroundRepeat: 'no-repeat'
       }}
     >
+      {/* Show damage number if exists */}
+      {damageDisplay && (
+        <DamageNumber damage={damageDisplay.damage} position={damageDisplay.position} />
+      )}
+
       {/* Audio Controls */}
       <div className="absolute top-16 right-4 text-white">
         <button
@@ -298,7 +454,10 @@ export const BattleArena = () => {
         <div className="flex flex-col items-center">
           <div className="w-48 h-64 relative">
             <div 
-              className="absolute inset-0 bg-contain bg-center bg-no-repeat float-left"
+              className={`absolute inset-0 bg-contain bg-center bg-no-repeat ${
+                attackAnimation === 'left' ? 'attack-left' : 
+                damageAnimation === 'left' ? 'damage-shake-left' : 'float-left'
+              }`}
               style={{ backgroundImage: `url(${left_player})` }} 
             />
           </div>
@@ -347,7 +506,10 @@ export const BattleArena = () => {
         <div className="flex flex-col items-center">
           <div className="w-48 h-64 relative">
             <div 
-              className="absolute inset-0 bg-contain bg-center bg-no-repeat float-right"
+              className={`absolute inset-0 bg-contain bg-center bg-no-repeat ${
+                attackAnimation === 'right' ? 'attack-right' : 
+                damageAnimation === 'right' ? 'damage-shake-right' : 'float-right'
+              }`}
               style={{ backgroundImage: `url(${right_player})` }} 
             />
           </div>
