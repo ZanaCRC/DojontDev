@@ -1,253 +1,255 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
 import left_player from '../assets/Player1_Left.png';
 import right_player from '../assets/Player2_Right.png';
 import { usePerformAction } from '../hooks/usePerformAction';
 import { useAccount } from '@starknet-react/core';
+import { lookupAddresses } from '@cartridge/controller';
+import { useLocation, useParams } from 'react-router-dom';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000;
+// Definir los keyframes y clases de animación
+const floatingAnimation = `
+  @keyframes floating {
+    0% {
+      transform: translateY(0px) scale(-1, 1);
+    }
+    50% {
+      transform: translateY(-15px) scale(-1, 1);
+    }
+    100% {
+      transform: translateY(0px) scale(-1, 1);
+    }
+  }
+
+  @keyframes floatingRight {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+
+  .float-left {
+    animation: floating 3s ease-in-out infinite;
+  }
+
+  .float-right {
+    animation: floatingRight 3s ease-in-out infinite;
+  }
+`;
 
 export const BattleArena = () => {
   const { battleId } = useParams();
-  const navigate = useNavigate();
+  const location = useLocation();
   const { account } = useAccount();
-  const { battleState, loading, performAction, isMyTurn, refreshBattleState } = usePerformAction({ battleId: battleId || '0' });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isWaiting, setIsWaiting] = useState(true);  // Empezamos asumiendo que estamos esperando
+  const { 
+    battleState, 
+    loading, 
+    performAction, 
+    isMyTurn,
+    refreshBattleState 
+  } = usePerformAction({ battleId: battleId || "0" });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [attackInProgress, setAttackInProgress] = useState(false);
-  const [loadingRetries, setLoadingRetries] = useState(0);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasReachedMaxRetries, setHasReachedMaxRetries] = useState(false);
+  const [usernames, setUsernames] = useState<Map<string, string>>(new Map());
 
-  // Efecto para manejar la visibilidad inicial - solo se ejecuta una vez
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Efecto principal para cargar datos de batalla - se ejecuta solo cuando es necesario
-  useEffect(() => {
-    let mounted = true;
-    let retryTimeout: NodeJS.Timeout;
-
-    const attemptLoad = async () => {
-      if (!mounted || hasReachedMaxRetries) return;
-
-      try {
-        await refreshBattleState();
-        
-        if (mounted) {
-          if (!battleState.battle && loadingRetries < MAX_RETRIES) {
-            retryTimeout = setTimeout(() => {
-              if (mounted) {
-                setLoadingRetries(prev => prev + 1);
-              }
-            }, RETRY_DELAY);
-          } else if (!battleState.battle) {
-            setHasReachedMaxRetries(true);
-            setLoadError('No se pudo cargar la batalla después de varios intentos');
-            setIsInitialLoading(false);
-          } else {
-            setLoadError(null);
-            setIsInitialLoading(false);
-            setHasReachedMaxRetries(false);
-          }
-        }
-      } catch (error) {
-        if (!mounted) return;
-        
-        console.error("Error loading battle data:", error);
-        if (loadingRetries < MAX_RETRIES) {
-          retryTimeout = setTimeout(() => {
-            if (mounted) {
-              setLoadingRetries(prev => prev + 1);
-            }
-          }, RETRY_DELAY);
-        } else {
-          setHasReachedMaxRetries(true);
-          setLoadError('Error al cargar los datos de la batalla');
-          setIsInitialLoading(false);
-        }
-      }
-    };
-
-    if (battleId && isInitialLoading) {
-      attemptLoad();
-    }
+    // Inyectar los estilos de animación
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = floatingAnimation;
+    document.head.appendChild(styleSheet);
 
     return () => {
-      mounted = false;
-      if (retryTimeout) {
-        clearTimeout(retryTimeout);
-      }
+      document.head.removeChild(styleSheet);
     };
-  }, [battleId, loadingRetries, refreshBattleState, battleState.battle, hasReachedMaxRetries, isInitialLoading]);
-
-  // Manejador de reintento manual
-  const handleManualRetry = useCallback(() => {
-    setLoadingRetries(0);
-    setLoadError(null);
-    setIsInitialLoading(true);
-    setHasReachedMaxRetries(false);
   }, []);
 
-  // Verificar si somos player1 o player2 (con validación)
-  const amIPlayer1 = battleState.battle?.player1 && account?.address 
-    ? battleState.battle.player1.toLowerCase() === account.address.toLowerCase()
-    : false;
+  useEffect(() => {
+    console.log('🎮 Battle Arena Mounted');
+    console.log('🎮 Battle ID:', battleId);
+    console.log('🎮 Account:', account?.address);
+    refreshBattleState(); // Forzar una actualización inicial
+  }, []);
 
-  const amIPlayer2 = battleState.battle?.player2 && account?.address
-    ? battleState.battle.player2.toLowerCase() === account.address.toLowerCase()
-    : false;
+  useEffect(() => {
+    const loadUsernames = async () => {
+      if (battleState.battle?.player1 && battleState.battle?.player2) {
+        try {
+          const addresses = [battleState.battle.player1, battleState.battle.player2];
+          const addressMap = await lookupAddresses(addresses);
+          setUsernames(addressMap);
+        } catch (error) {
+          console.error("Error fetching usernames:", error);
+        }
+      }
+    };
+
+    loadUsernames();
+  }, [battleState.battle?.player1, battleState.battle?.player2]);
+
+  const getDisplayName = (address: string) => {
+    const username = usernames.get(address);
+    if (username) return username;
+    // Si no hay username, acortar la dirección
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  useEffect(() => {
+    console.log('🎮 Battle State Updated:', {
+      battle: battleState.battle,
+      player1Health: battleState.player1Health,
+      player2Health: battleState.player2Health,
+      isMyTurn: isMyTurn()
+    });
+  }, [battleState, isMyTurn]);
+
+  useEffect(() => {
+    if (!loading && isInitialLoading) {
+      setIsInitialLoading(false);
+    }
+  }, [loading]);
 
   const handleAttack = async () => {
-    if (!isMyTurn() || attackInProgress || !battleState.battle) return;
-
     try {
-      setAttackInProgress(true);
+      console.log('🎮 Initiating Attack');
       const attackValue = Math.floor(Math.random() * 5) + 1;
+      console.log('🎮 Attack Value:', attackValue);
       await performAction(0, attackValue);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await refreshBattleState();
+      await refreshBattleState(); // Actualizar estado después del ataque
+      console.log('🎮 Attack Completed');
     } catch (error) {
-      console.error("Error performing attack:", error);
-    } finally {
-      setAttackInProgress(false);
+      console.error("🎮 Error performing attack:", error);
     }
   };
 
-  // Pantalla de carga inicial con fade y mensaje de error
-  if (isInitialLoading || loading) {
-    return (
-      <div 
-        className={`fixed inset-0 bg-black/90 flex items-center justify-center transition-all duration-300 ease-in-out ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div className="text-2xl text-white flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4F7CEC]"></div>
-          <div className="transition-opacity duration-300">
-            Cargando datos de la batalla... {loadingRetries > 0 ? `(Intento ${loadingRetries}/${MAX_RETRIES})` : ''}
-          </div>
-          {loadError && (
-            <div className="text-red-500 text-lg mt-2 transition-opacity duration-300">
-              {loadError}
-              <button
-                onClick={() => {
-                  setLoadingRetries(0);
-                  setLoadError(null);
-                  setIsInitialLoading(true);
-                }}
-                className="ml-4 px-4 py-2 bg-[#4F7CEC] rounded-lg hover:bg-[#4F7CEC]/80 text-white transition-colors duration-300"
-              >
-                Reintentar
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Si hay error y no está cargando, mostrar pantalla de error
-  if (loadError && !isInitialLoading) {
-    return (
-      <div 
-        className={`fixed inset-0 bg-black/90 flex items-center justify-center transition-all duration-300 ease-in-out ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div className="text-white text-center">
-          <h2 className="text-2xl font-bold mb-4">Error al cargar la batalla</h2>
-          <p className="mb-4 text-red-500">{loadError}</p>
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={handleManualRetry}
-              className="px-6 py-3 bg-[#4F7CEC] rounded-lg hover:bg-[#4F7CEC]/80 transition-colors duration-300"
-            >
-              Reintentar
-            </button>
-            <button
-              onClick={() => navigate('/battleview')}
-              className="px-6 py-3 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-300"
-            >
-              Volver al lobby
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Verificar si el usuario es parte de la batalla
-  if (!amIPlayer1 && !amIPlayer2) {
-    if (!battleState.battle) {
-      return (
-        <div 
-          className={`fixed inset-0 bg-black/90 flex items-center justify-center transition-all duration-300 ease-in-out ${
-            isVisible ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <div className="text-white text-center">
-            <h2 className="text-2xl font-bold mb-4">Error al cargar los datos de la batalla</h2>
-            <button
-              onClick={() => navigate('/battleview')}
-              className="px-6 py-3 bg-[#4F7CEC] rounded-lg hover:bg-[#4F7CEC]/80 transition-colors duration-300"
-            >
-              Volver al lobby
-            </button>
-          </div>
-        </div>
-      );
+  // Inicializar y manejar el audio
+  useEffect(() => {
+    // Crear el elemento de audio
+    audioRef.current = new Audio('/battlesound.mp3');
+    if (audioRef.current) {
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.5; // 50% volumen
+      audioRef.current.play().catch(error => {
+        console.warn("Audio autoplay failed:", error);
+      });
     }
 
+    // Cleanup cuando el componente se desmonte
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
+  }, []);
+
+  // Efecto para verificar el estado de la batalla
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    const checkBattleStatus = async () => {
+      await refreshBattleState();
+      if (battleState.battle?.status === 'InProgress') {
+        setIsWaiting(false);
+      }
+    };
+
+    if (isWaiting) {
+      // Verificar el estado cada 3 segundos
+      intervalId = setInterval(checkBattleStatus, 3000);
+      checkBattleStatus(); // Verificar inmediatamente también
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isWaiting, battleState.battle?.status, refreshBattleState]);
+
+  // Pantalla de espera
+  if (isWaiting && battleState.battle?.status !== 'InProgress') {
     return (
-      <div 
-        className={`fixed inset-0 bg-black/90 flex items-center justify-center transition-all duration-300 ease-in-out ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div className="text-white text-center">
-          <h2 className="text-2xl font-bold mb-4">No eres parte de esta batalla</h2>
-          <p className="mb-4 text-gray-400">
-            Player 1: {battleState.battle.player1.slice(0, 6)}...{battleState.battle.player1.slice(-4)}<br/>
-            Player 2: {battleState.battle.player2 ? `${battleState.battle.player2.slice(0, 6)}...${battleState.battle.player2.slice(-4)}` : 'Esperando oponente'}
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center transition-opacity duration-300">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#4F7CEC] mx-auto"></div>
+          <h2 className="text-2xl text-white font-bold">Esperando oponente...</h2>
+          <p className="text-gray-400">
+            Battle ID: {battleId}
           </p>
-          <button
-            onClick={() => navigate('/battleview')}
-            className="px-6 py-3 bg-[#4F7CEC] rounded-lg hover:bg-[#4F7CEC]/80 transition-colors duration-300"
-          >
-            Volver al lobby
-          </button>
+          <p className="text-sm text-gray-500">
+            La batalla comenzará automáticamente cuando un oponente se una
+          </p>
         </div>
       </div>
     );
   }
+
+  // Pantalla de carga inicial con fade
+  if (isInitialLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center transition-opacity duration-300">
+        <div className="text-2xl text-white flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4F7CEC]"></div>
+          <div>Loading battle data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentTurn = battleState.battle?.current_turn || 'Unknown';
+  const myTurn = isMyTurn();
 
   return (
     <div 
-      className={`relative w-full h-[920px] flex items-center justify-center transition-all duration-300 ease-in-out ${
-        isVisible ? 'opacity-100' : 'opacity-0'
-      }`}
+      className="relative w-full h-[920px] flex items-center justify-center transition-opacity duration-300"
       style={{
         backgroundImage: 'url("/b.png")', 
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
-      {/* Battle ID y Estado del Turno */}
-      <div className="absolute top-4 left-4 space-y-2">
-        <div className="text-white font-bold text-lg [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
-          Battle #{battleId}
-        </div>
-        <div className={`text-sm font-medium px-3 py-1 rounded-lg ${
-          isMyTurn() 
-            ? 'bg-green-500/80 text-white' 
-            : 'bg-red-500/80 text-white'
-        }`}>
-          {isMyTurn() ? 'Tu turno' : 'Turno del oponente'}
-        </div>
+      {/* Audio Controls - Optional: remove if you don't want visible controls */}
+      <div className="absolute top-16 right-4 text-white">
+        <button
+          className="px-3 py-1 bg-gray-800/50 rounded hover:bg-gray-700/50 transition-colors"
+          onClick={() => {
+            if (audioRef.current) {
+              if (audioRef.current.paused) {
+                audioRef.current.play();
+              } else {
+                audioRef.current.pause();
+              }
+            }
+          }}
+        >
+          {audioRef.current?.paused ? '🔇' : '🔊'}
+        </button>
+      </div>
+
+      {/* Battle ID Display */}
+      <div className="absolute top-4 left-4 text-white font-bold text-lg [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+        Battle #{battleId}
+      </div>
+      
+      {/* Debug Info */}
+      <div className="absolute top-4 right-4 text-white text-sm text-right [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+        <div>My Address: {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Not connected'}</div>
+        <div>Current Turn: {currentTurn !== 'Unknown' ? `${currentTurn.slice(0, 6)}...${currentTurn.slice(-4)}` : 'Unknown'}</div>
+        <div>Is My Turn: {myTurn ? 'Yes' : 'No'}</div>
+        <div>Battle Status: {battleState.battle?.status || 'Unknown'}</div>
+      </div>
+      
+      {/* Debug Info */}
+      <div className="absolute top-4 right-4 text-white text-sm text-right [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+        <div>My Address: {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Not connected'}</div>
+        <div>Current Turn: {currentTurn !== 'Unknown' ? `${currentTurn.slice(0, 6)}...${currentTurn.slice(-4)}` : 'Unknown'}</div>
+        <div>Is My Turn: {myTurn ? 'Yes' : 'No'}</div>
+        <div>Battle Status: {battleState.battle?.status || 'Unknown'}</div>
       </div>
       
       {/* Contenedor principal */}
@@ -256,9 +258,7 @@ export const BattleArena = () => {
         <div className="flex flex-col items-center">
           <div className="w-48 h-64 relative">
             <div 
-              className={`absolute inset-0 bg-contain bg-center bg-no-repeat transform scale-x-[-1] transition-all duration-300 ${
-                amIPlayer1 && isMyTurn() ? 'scale-110' : ''
-              }`}
+              className="absolute inset-0 bg-contain bg-center bg-no-repeat float-left"
               style={{ backgroundImage: `url(${left_player})` }} 
             />
           </div>
@@ -271,32 +271,34 @@ export const BattleArena = () => {
           </div>
           <span className="mt-2 text-white font-bold [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
             {battleState.player1Health}/100 HP
-            {amIPlayer1 && <span className="ml-2">(Tú)</span>}
+          </span>
+          <span className="mt-1 text-white text-sm [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+            {battleState.battle?.player1 ? getDisplayName(battleState.battle.player1) : 'Unknown'}
           </span>
         </div>
 
         {/* Área central con botón de ataque */}
         <div className="flex flex-col items-center z-10">
-          {isMyTurn() ? (
+          {myTurn ? (
             <button
               onClick={handleAttack}
-              disabled={attackInProgress || !isMyTurn()}
-              className="px-8 py-4 bg-gradient-to-r from-[#4F7CEC] to-[#9c40ff] text-white font-bold rounded-lg 
+              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg 
                        transform hover:scale-105 transition-all duration-300 shadow-lg
                        disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!myTurn || loading}
             >
-              {attackInProgress ? (
+              {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                  <span>Atacando...</span>
+                  <span>Attacking...</span>
                 </div>
               ) : (
-                "ATACAR"
+                "ATTACK"
               )}
             </button>
           ) : (
-            <div className="px-8 py-4 bg-gray-600/50 backdrop-blur-sm text-white font-bold rounded-lg border border-white/10">
-              TURNO DEL OPONENTE
+            <div className="px-8 py-4 bg-gray-600 text-white font-bold rounded-lg">
+              OPPONENT'S TURN
             </div>
           )}
         </div>
@@ -305,9 +307,7 @@ export const BattleArena = () => {
         <div className="flex flex-col items-center">
           <div className="w-48 h-64 relative">
             <div 
-              className={`absolute inset-0 bg-contain bg-center bg-no-repeat transition-all duration-300 ${
-                amIPlayer2 && isMyTurn() ? 'scale-110' : ''
-              }`}
+              className="absolute inset-0 bg-contain bg-center bg-no-repeat float-right"
               style={{ backgroundImage: `url(${right_player})` }} 
             />
           </div>
@@ -320,7 +320,86 @@ export const BattleArena = () => {
           </div>
           <span className="mt-2 text-white font-bold [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
             {battleState.player2Health}/100 HP
-            {amIPlayer2 && <span className="ml-2">(Tú)</span>}
+          </span>
+          <span className="mt-1 text-white text-sm [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+            {battleState.battle?.player2 ? getDisplayName(battleState.battle.player2) : 'Unknown'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}; 
+      {/* Contenedor principal */}
+      <div className="absolute inset-0 flex items-center justify-between px-12">
+        {/* Jugador 1 (Izquierda) */}
+        <div className="flex flex-col items-center">
+          <div className="w-48 h-64 relative">
+            <div 
+              className="absolute inset-0 bg-contain bg-center bg-no-repeat float-left"
+              style={{ backgroundImage: `url(${left_player})` }} 
+            />
+          </div>
+          {/* Barra de vida Jugador 1 */}
+          <div className="w-48 h-4 bg-gray-300 rounded-full mt-4 overflow-hidden">
+            <div 
+              className="h-full bg-red-600 transition-all duration-500 ease-out"
+              style={{ width: `${battleState.player1Health}%` }}
+            />
+          </div>
+          <span className="mt-2 text-white font-bold [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+            {battleState.player1Health}/100 HP
+          </span>
+          <span className="mt-1 text-white text-sm [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+            {battleState.battle?.player1 ? getDisplayName(battleState.battle.player1) : 'Unknown'}
+          </span>
+        </div>
+
+        {/* Área central con botón de ataque */}
+        <div className="flex flex-col items-center z-10">
+          {myTurn ? (
+            <button
+              onClick={handleAttack}
+              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg 
+                       transform hover:scale-105 transition-all duration-300 shadow-lg
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!myTurn || loading}
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <span>Attacking...</span>
+                </div>
+              ) : (
+                "ATTACK"
+              )}
+            </button>
+          ) : (
+            <div className="px-8 py-4 bg-gray-600 text-white font-bold rounded-lg">
+              OPPONENT'S TURN
+            </div>
+          )}
+        </div>
+
+        {/* Jugador 2 (Derecha) */}
+        <div className="flex flex-col items-center">
+          <div className="w-48 h-64 relative">
+            <div 
+              className="absolute inset-0 bg-contain bg-center bg-no-repeat float-right"
+              style={{ backgroundImage: `url(${right_player})` }} 
+            />
+          </div>
+          {/* Barra de vida Jugador 2 */}
+          <div className="w-48 h-4 bg-gray-300 rounded-full mt-4 overflow-hidden">
+            <div 
+              className="h-full bg-red-600 transition-all duration-500 ease-out"
+              style={{ width: `${battleState.player2Health}%` }}
+            />
+          </div>
+          <span className="mt-2 text-white font-bold [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+            {battleState.player2Health}/100 HP
+          </span>
+          <span className="mt-1 text-white text-sm [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)]">
+            {battleState.battle?.player2 ? getDisplayName(battleState.battle.player2) : 'Unknown'}
           </span>
         </div>
       </div>

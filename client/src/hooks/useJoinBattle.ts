@@ -1,7 +1,7 @@
 import { useAccount } from '@starknet-react/core'
 import { useCallback, useState } from 'react'
 import type { BigNumberish } from 'starknet'
-
+ 
 const { VITE_BATTLE_CONTRACT_ADDRESS, VITE_TORII_URL } = import.meta.env;
 
 // Types
@@ -94,20 +94,20 @@ export const useJoinBattle = () => {
         if (!account) return;
         setSubmitted(true);
         setTxnHash(undefined);
-        try {
+      try {
             const result = await account.execute([{
-                contractAddress: VITE_BATTLE_CONTRACT_ADDRESS,
-                entrypoint: 'join_battle',
-                calldata: [battleId],
+            contractAddress: VITE_BATTLE_CONTRACT_ADDRESS,
+            entrypoint: 'join_battle',
+            calldata: [battleId],
             }]);
             setTxnHash(result.transaction_hash);
             return result;
-        } catch (e) {
+      } catch (e) {
             console.error('Error joining battle:', e);
             throw e;
-        } finally {
+      } finally {
             setSubmitted(false);
-        }
+      }
     }, [account]);
 
     return {

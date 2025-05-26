@@ -99,58 +99,53 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
       const result = await createPlayer(amountInWei as BigNumberish);
       if (result) {
         setTxHash(result.transaction_hash);
-        setRedirectMessage("¡Transacción enviada! Esperando confirmación...");
+        setRedirectMessage("¡Batalla creada! Buscando ID...");
+
+        // Función para intentar encontrar la batalla
+        const findBattle = async (retries = 5): Promise<number | null> => {
+          for (let i = 0; i < retries; i++) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            console.log(`\nIntento ${i + 1}: Buscando batallas con monto:`, amountInWei);
+            const battlesData = await fetchAvailableBattles(amountInWei);
+            console.log('Batallas encontradas:', battlesData);
+
+            // Buscar la batalla más reciente en estado "Waiting"
+            const recentBattle = battlesData?.find(battle => battle.status === 'Waiting');
+            
+            if (recentBattle) {
+              console.log('Batalla encontrada:', recentBattle);
+              return recentBattle.battle_id;
+            }
+            
+            setRedirectMessage(`Buscando batalla... (intento ${i + 1}/${retries})`);
+          }
+          return null;
+        };
+
+        // Intentar encontrar la batalla con reintentos
+        const battleId = await findBattle();
         
-        // Esperar a que la transacción se confirme
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Dar tiempo para que la transacción se confirme
-        
-        // Obtener las batallas y buscar la nuestra
-        const battlesData = await fetchAvailableBattles(amountInWei);
-        if (battlesData && battlesData.length > 0) {
-          // Buscar la batalla donde somos el creador (player1)
-          const ourBattle = battlesData.find(
-            battle => battle.player1.toLowerCase() === walletConnection.address?.toLowerCase()
+
+        if (battleId) {
+          setRedirectMessage("¡Batalla encontrada! Redirigiendo...");
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Redirigir a la batalla y el componente BattleArena manejará la espera del estado
+          navigate(`/BattleArena/${battleId}`);
+        } else {
+          throw new Error(
+            "No se pudo encontrar la batalla creada. Por favor:\n\n" +
+            "1. Verifica que la transacción se haya confirmado en el explorador\n" +
+            "2. Revisa la consola para ver los detalles de la búsqueda\n" +
+            "3. Intenta refrescar la página en unos momentos"
           );
 
-          if (ourBattle) {
-            setRedirectMessage("¡Batalla creada! Redirigiendo a la arena...");
-            // Pequeña pausa para mostrar el mensaje de éxito
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            // Redirigir a la vista de batalla
-            navigate(`/BattleArena/${ourBattle.battle_id}`);
-          } else {
-            setRedirectMessage("Esperando confirmación de la batalla...");
-            // Si no encontramos la batalla inmediatamente, intentar nuevamente
-            let retries = 0;
-            const maxRetries = 5;
-            const findBattleInterval = setInterval(async () => {
-              const updatedBattles = await fetchAvailableBattles(amountInWei);
-              const newBattle = updatedBattles.find(
-                battle => battle.player1.toLowerCase() === walletConnection.address?.toLowerCase()
-              );
-
-              if (newBattle) {
-                clearInterval(findBattleInterval);
-                setRedirectMessage("¡Batalla creada! Redirigiendo a la arena...");
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                navigate(`/BattleArena/${newBattle.battle_id}`);
-              } else if (retries >= maxRetries) {
-                clearInterval(findBattleInterval);
-                setIsRedirecting(false);
-                alert("No se pudo encontrar la batalla creada. Por favor, verifica en la lista de batallas disponibles.");
-              }
-              retries++;
-            }, 3000); // Intentar cada 3 segundos
-          }
-        } else {
-          setIsRedirecting(false);
-          alert("No se pudo encontrar la batalla creada. Por favor, intenta nuevamente.");
         }
       }
 
     } catch (error: any) {
       setIsRedirecting(false);
-      console.error("Detailed error when creating the batlle:", {
+      console.error("Detailed error when creating the battle:", {
         error,
         message: error?.message,
         code: error?.code,
@@ -179,6 +174,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
       alert(errorMessage);
     } finally {
       setLoading(false);
+      setIsRedirecting(false);
     }
   };
 
