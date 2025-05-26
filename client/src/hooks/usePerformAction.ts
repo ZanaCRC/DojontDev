@@ -77,6 +77,35 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     const [currentTurn, setCurrentTurn] = useState<string | null>(null);
     const { account } = useAccount();
 
+    const fetchPlayerHealth = async (address: string): Promise<number> => {
+        try {
+            console.log('🎮 Fetching health for player:', address);
+            const response = await fetch(VITE_TORII_URL + "/graphql", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query: `{ dojontdevPlayerModels(where: { player: "${address}" }) { edges { node { player health in_battle bet_amount } } } }`
+                }),
+            });
+
+            const result = await response.json();
+            console.log('🎮 Player health data:', result);
+            
+            const player = result.data?.dojontdevPlayerModels?.edges[0]?.node;
+            if (!player) {
+                console.error('🎮 No player data found');
+                return -10;
+            }
+
+            const health = player.health;
+            console.log('🎮 Player health value:', health);
+            return health;
+        } catch (error) {
+            console.error("🎮 Error fetching player health:", error);
+            return -10;
+        }
+    };
+
     const fetchBattleState = useCallback(async () => {
         if (!account) {
             console.log('🎮 No account connected');
@@ -87,23 +116,15 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
             console.log('🎮 Fetching battle state for ID:', battleId);
             setLoading(true);
             
-            // Construir la consulta con el ID específico
             const query = BATTLE_QUERY.replace('BATTLE_ID', battleId.toString());
-            
-            const queryBody = {
-                query
-            };
-            console.log('🎮 Query body:', JSON.stringify(queryBody, null, 2));
-
             const response = await fetch(VITE_TORII_URL + "/graphql", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(queryBody)
+                body: JSON.stringify({ query })
             });
 
             const result = await response.json();
-            console.log('🎮 Battle query result:', JSON.stringify(result, null, 2));
-
+            
             if (result.errors) {
                 console.error('🎮 GraphQL Errors:', result.errors);
                 return;
@@ -118,10 +139,7 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
                     player1: battle.player1,
                     player2: battle.player2,
                     currentTurn: battle.current_turn,
-                    myAddress: account.address,
-                    isMyTurn,
-                    status: battle.status,
-                    bet: battle.bet
+                    status: battle.status
                 });
 
                 // Fetch health for both players
@@ -130,8 +148,10 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
                     fetchPlayerHealth(battle.player2)
                 ]);
 
-                console.log('🎮 Players health:', {
+                console.log('🎮 Players health updated:', {
+                    player1: battle.player1,
                     player1Health,
+                    player2: battle.player2,
                     player2Health
                 });
 
@@ -142,8 +162,6 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
                     player1Health: player1Health >= 0 ? player1Health : prev.player1Health,
                     player2Health: player2Health >= 0 ? player2Health : prev.player2Health
                 }));
-            } else {
-                console.log('🎮 No battle found for ID:', battleId);
             }
         } catch (error) {
             console.error('🎮 Error fetching battle state:', error);
@@ -155,30 +173,6 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     const isMyTurn = useCallback(() => {
         return battleState.isMyTurn;
     }, [battleState.isMyTurn]);
-
-    const fetchPlayerHealth = async (address: string): Promise<number> => {
-        try {
-            console.log('🎮 Fetching health for player:', address);
-            const response = await fetch(VITE_TORII_URL + "/graphql", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    query: PLAYER_QUERY,
-                    variables: { playerAddress: address }
-                }),
-            });
-
-            const result = await response.json();
-            console.log('🎮 Player data:', result);
-            const player = result.data?.dojontdevPlayerModels?.edges[0]?.node;
-            const health = player?.health ?? -10;
-            console.log('🎮 Player health:', health);
-            return health;
-        } catch (error) {
-            console.error("🎮 Error fetching player health:", error);
-            return -10;
-        }
-    };
 
     const performAction = useCallback(async (actionType: BigNumberish, attackValue: BigNumberish) => {
         if (!account) {
@@ -215,11 +209,80 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
             console.log('🎮 Action executed successfully:', result);
             setTxnHash(result.transaction_hash);
             
-            // Esperar un momento para que la transacción se procese
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Actualizar el estado después de la acción
-            await fetchBattleState();
+            // Intentar actualizar inmediatamente y luego en intervalos cortos
+            const maxAttempts = 10;
+            let attempts = 0;
+
+            const tryUpdate = async () => {
+                if (attempts >= maxAttempts) {
+                    console.log('🎮 Máximo de intentos de actualización alcanzado');
+                    return;
+                }
+
+                attempts++;
+                console.log(`🎮 Intento de actualización #${attempts}`);
+
+                try {
+                    // Obtener el estado actualizado de la batalla
+                    const query = BATTLE_QUERY.replace('BATTLE_ID', battleId.toString());
+                    const response = await fetch(VITE_TORII_URL + "/graphql", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ query })
+                    });
+
+                    const battleResult = await response.json();
+                    const battle = battleResult.data?.dojontdevBattleModels?.edges[0]?.node;
+
+                    if (battle) {
+                        console.log('🎮 Updated battle state after action:', battle);
+                        
+                        // Obtener la vida actualizada de ambos jugadores
+                        const [player1Health, player2Health] = await Promise.all([
+                            fetchPlayerHealth(battle.player1),
+                            fetchPlayerHealth(battle.player2)
+                        ]);
+
+                        console.log('🎮 Updated player health after action:', {
+                            player1Health,
+                            player2Health
+                        });
+
+                        // Verificar si los valores han cambiado
+                        if (player1Health !== battleState.player1Health || 
+                            player2Health !== battleState.player2Health) {
+                            console.log('🎮 Cambios detectados en la vida de los jugadores');
+                            setBattleState(prev => ({
+                                ...prev,
+                                battle,
+                                isMyTurn: battle.current_turn === account.address,
+                                player1Health: player1Health >= 0 ? player1Health : prev.player1Health,
+                                player2Health: player2Health >= 0 ? player2Health : prev.player2Health
+                            }));
+                            return true; // Cambios detectados
+                        }
+                    }
+                } catch (error) {
+                    console.error('🎮 Error en intento de actualización:', error);
+                }
+                return false; // No se detectaron cambios
+            };
+
+            // Primer intento inmediato
+            const updated = await tryUpdate();
+            if (!updated) {
+                // Si no hay cambios, intentar cada 500ms
+                const updateInterval = setInterval(async () => {
+                    const updated = await tryUpdate();
+                    if (updated) {
+                        clearInterval(updateInterval);
+                    }
+                }, 500);
+
+                // Limpiar el intervalo después de maxAttempts * 500ms
+                setTimeout(() => clearInterval(updateInterval), maxAttempts * 500);
+            }
+
             return result;
         } catch (e) {
             console.error('🎮 Error performing action:', e);
@@ -227,13 +290,22 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
         } finally {
             setSubmitted(false);
         }
-    }, [account, battleId, battleState.isMyTurn, fetchBattleState]);
+    }, [account, battleId, battleState.isMyTurn, battleState.player1Health, battleState.player2Health, fetchPlayerHealth]);
 
     // Set up automatic refresh of battle state
     useEffect(() => {
-        fetchBattleState();
-        const interval = setInterval(fetchBattleState, 5000);
-        return () => clearInterval(interval);
+        console.log('🎮 Setting up battle state refresh');
+        fetchBattleState(); // Initial fetch
+        
+        const interval = setInterval(() => {
+            console.log('🎮 Auto-refreshing battle state');
+            fetchBattleState();
+        }, 2000);
+        
+        return () => {
+            console.log('🎮 Cleaning up battle state refresh');
+            clearInterval(interval);
+        };
     }, [fetchBattleState]);
 
     return {

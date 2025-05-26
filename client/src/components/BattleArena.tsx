@@ -46,7 +46,10 @@ export const BattleArena = () => {
   const location = useLocation();
   const { account } = useAccount();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isWaiting, setIsWaiting] = useState(true);  // Empezamos asumiendo que estamos esperando
+  const attackSoundRef = useRef<HTMLAudioElement | null>(null);
+  const [isWaiting, setIsWaiting] = useState(true);
+  const [isAttacking, setIsAttacking] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
   const { 
     battleState, 
     loading, 
@@ -113,39 +116,82 @@ export const BattleArena = () => {
     }
   }, [loading]);
 
-  const handleAttack = async () => {
-    try {
-      console.log('🎮 Initiating Attack');
-      const attackValue = Math.floor(Math.random() * 5) + 1;
-      console.log('🎮 Attack Value:', attackValue);
-      await performAction(0, attackValue);
-      await refreshBattleState(); // Actualizar estado después del ataque
-      console.log('🎮 Attack Completed');
-    } catch (error) {
-      console.error("🎮 Error performing attack:", error);
-    }
-  };
-
-  // Inicializar y manejar el audio
+  // Inicializar y manejar el audio de fondo
   useEffect(() => {
-    // Crear el elemento de audio
-    audioRef.current = new Audio('/battlesound.mp3');
-    if (audioRef.current) {
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.5; // 50% volumen
-      audioRef.current.play().catch(error => {
-        console.warn("Audio autoplay failed:", error);
-      });
-    }
+    const initBackgroundMusic = () => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio('/battlesound.mp3');
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.2;
+      }
+    };
 
-    // Cleanup cuando el componente se desmonte
+    const playBackgroundMusic = async () => {
+      try {
+        if (audioRef.current && isMusicPlaying) {
+          await audioRef.current.play();
+        }
+      } catch (error) {
+        console.warn("Audio autoplay failed:", error);
+      }
+    };
+
+    initBackgroundMusic();
+    playBackgroundMusic();
+
+    // Manejar eventos de visibilidad del documento
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        audioRef.current?.pause();
+      } else if (isMusicPlaying) {
+        audioRef.current?.play().catch(console.warn);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+    };
+  }, [isMusicPlaying]);
+
+  // Inicializar sonido del botón
+  useEffect(() => {
+    attackSoundRef.current = new Audio('/button.wav');
+    if (attackSoundRef.current) {
+      attackSoundRef.current.volume = 0.6;
+    }
+
+    return () => {
+      if (attackSoundRef.current) {
+        attackSoundRef.current.pause();
+        attackSoundRef.current = null;
       }
     };
   }, []);
+
+  const handleAttack = async () => {
+    try {
+      setIsAttacking(true);
+      // Reproducir sonido de ataque
+      if (attackSoundRef.current) {
+        attackSoundRef.current.currentTime = 0; // Reiniciar el sonido
+        attackSoundRef.current.play().catch(console.error);
+      }
+      
+      const attackValue = Math.floor(Math.random() * 5) + 1;
+      await performAction(0, attackValue);
+      await refreshBattleState();
+    } catch (error) {
+      console.error("Error performing attack:", error);
+    } finally {
+      setIsAttacking(false);
+    }
+  };
 
   // Efecto para verificar el estado de la batalla
   useEffect(() => {
@@ -213,21 +259,22 @@ export const BattleArena = () => {
         backgroundPosition: 'center'
       }}
     >
-      {/* Audio Controls - Optional: remove if you don't want visible controls */}
+      {/* Audio Controls */}
       <div className="absolute top-16 right-4 text-white">
         <button
           className="px-3 py-1 bg-gray-800/50 rounded hover:bg-gray-700/50 transition-colors"
           onClick={() => {
+            setIsMusicPlaying(!isMusicPlaying);
             if (audioRef.current) {
               if (audioRef.current.paused) {
-                audioRef.current.play();
+                audioRef.current.play().catch(console.warn);
               } else {
                 audioRef.current.pause();
               }
             }
           }}
         >
-          {audioRef.current?.paused ? '🔇' : '🔊'}
+          {!isMusicPlaying ? '🔇' : '🔊'}
         </button>
       </div>
 
@@ -277,9 +324,9 @@ export const BattleArena = () => {
               className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg 
                        transform hover:scale-105 transition-all duration-300 shadow-lg
                        disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!myTurn || loading}
+              disabled={!myTurn || isAttacking}
             >
-              {loading ? (
+              {isAttacking ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
                   <span>Attacking...</span>
