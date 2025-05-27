@@ -13,16 +13,6 @@
   <img src="https://img.shields.io/github/stars/dojoengine/dojo?style=social"/>
 </a>
 
-[![discord](https://img.shields.io/badge/join-dojo-green?logo=discord&logoColor=white)](https://discord.com/invite/dojoengine)
-[![Telegram Chat][tg-badge]][tg-url]
-
-[tg-badge]: https://img.shields.io/endpoint?color=neon&logo=telegram&label=chat&style=flat-square&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Fdojoengine
-[tg-url]: https://t.me/dojoengine
-
-# Dojo Starter: Official Guide
-
-A quickstart guide to help you build and deploy your first Dojo provable game.  
-Read the full tutorial [here](https://dojoengine.org/tutorial/dojo-starter).
 
 ---
 
