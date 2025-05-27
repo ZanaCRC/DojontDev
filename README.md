@@ -50,30 +50,9 @@ A simple turn-based PvP game built with the [Dojo framework](https://dojoengine.
 
 ---
 
-
-
-## 🛠️ Requirements
-
-Install Dojo and other dependencies first:
-
-```bash
-curl -L https://install.dojoengine.org | bash
-dojoup
-```
-
-Full docs: [https://dojoengine.org](https://dojoengine.org)
-
----
-
 ## 🚀 Running on Sepolia (SN_SEPOLIA)
 
 The world is already deployed on Sepolia. To run the frontend:
-
-```bash
-cd client
-pnpm install
-pnpm run dev
-```
 
 ## 🌐 Frontend Setup with HTTPS
 
@@ -81,6 +60,7 @@ For Cartridge to work locally, HTTPS is required:
 
 ```bash
 sudo apt install libnss3-tools
+cd client
 mkcert --install
 mkcert localhost
 ```
@@ -111,21 +91,31 @@ pnpm install
 pnpm run dev
 ```
 
----
-
 
 
 ## 🌍 Deploy a New World (Optional)
 
 If you'd like to deploy a new world to Sepolia:
 
+## 🛠️ Requirements
+
+Install Dojo and other dependencies first:
+
+```bash
+curl -L https://install.dojoengine.org | bash
+dojoup
+```
+
+Full docs: [https://dojoengine.org](https://dojoengine.org)
+
+---
 ```bash
 ./deploy_sepolia.sh
 ```
 
 - Edit `dojo_sepolia.toml`:
   - Change the `seed`
-  - Comment out `world.address` and `world.block_number`
+  - Comment out `world_address` and `world_block`
 - Move the generated `manifest_sepolia.json` to `client/src/json/`
 
 ---
