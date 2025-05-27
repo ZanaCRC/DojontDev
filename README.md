@@ -1,5 +1,5 @@
 
-![Dojo Starter](./assets/cover.png)
+![Dojo Starter](./backend/assets/cover.png)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/mark-dark.svg">
