@@ -98,15 +98,20 @@ dojoup
 
 Full docs: [https://dojoengine.org](https://dojoengine.org)
 
+
+
+- Edit `dojo_sepolia.toml`:
+  - Change the `seed`
+  - Comment out `world_address` and `world_block`
+
+Now you need to migrate the new world:
+
 ---
 ```bash
 ./deploy_sepolia.sh
 ```
 
-- Edit `dojo_sepolia.toml`:
-  - Change the `seed`
-  - Comment out `world_address` and `world_block`
-- Move the generated `manifest_sepolia.json` to `client/src/json/`
+- Copy the generated `manifest_sepolia.json` to `client/src/json/`
 
 ---
 
@@ -134,7 +139,7 @@ You’ll now have the backend running on Sepolia and indexed via Torii.
 
 1. Copy the world manifest:
    ```bash
-   mv manifest_sepolia.json client/src/json/
+   cp manifest_sepolia.json client/src/json/
    ```
 
 2. Update your `.env` file in the `client/` folder with the following:
@@ -161,6 +166,8 @@ torii --world <WORLD_ADDRESS> --http.cors_origins "*"
 ```
 
 > ✅ Minimum 2 accounts are required for testing.
+
+> You can find the scripts for testing in Scarb.toml file
 
 ---
 
