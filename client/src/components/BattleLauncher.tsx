@@ -11,6 +11,9 @@ import { useJoinBattle } from "../hooks/useJoinBattle";
 import { lookupAddresses } from '@cartridge/controller';
 import { useNavigate } from 'react-router-dom';
 import { BattleArena } from "./BattleArena";
+import { useEthApproval } from "../hooks/useEthApproval";
+
+const { VITE_BATTLE_CONTRACT_ADDRESS } = import.meta.env;
 
 interface BattleLauncherProps {
   amount: string;
@@ -30,6 +33,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
   const { execute: createPlayer, submitted } = useCreatePlayer();
   const { battles, loading: loadingBattles, fetchAvailableBattles, joinBattle } = useJoinBattle();
   const [usernames, setUsernames] = useState<Map<string, string>>(new Map());
+  const { execute: executeEthTransfer, submitted: ethSubmitted } = useEthApproval();
 
   // Convertir el amount a wei en formato hexadecimal
   const amountInWei = amount 
@@ -93,63 +97,73 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
     try {
       setLoading(true);
       setIsRedirecting(true);
-      setRedirectMessage("Creating battle...");
-      console.log("Creating a battle with amount:", amountInWei);
+      setRedirectMessage("Processing ETH transfer...");
 
-      const result = await createPlayer(amountInWei as BigNumberish);
+      // Convert amount to wei (1 ETH = 10^18 wei)
+      const amountInWei = "0x" + (BigInt(Math.floor(parseFloat(amount) * 1e18))).toString(16);
+
+      // First handle the ETH approval and transfer
+      const result = await executeEthTransfer(amountInWei);
+      
       if (result) {
-        setTxHash(result.transaction_hash);
-        setRedirectMessage("Battle created! Looking for ID...");
+        setRedirectMessage("ETH transferred! Creating battle...");
+        console.log("Creating a battle with amount:", amountInWei);
 
-        // Function to try to find the battle
-        const findBattle = async (retries = 5): Promise<number | null> => {
-          for (let i = 0; i < retries; i++) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            console.log(`\nAttempt ${i + 1}: Looking for battles with amount:`, amountInWei);
-            const battlesData = await fetchAvailableBattles(amountInWei);
-            console.log('Battles found:', battlesData);
+        const battleResult = await createPlayer(amountInWei as BigNumberish);
+        if (battleResult) {
+          setTxHash(battleResult.transaction_hash);
+          setRedirectMessage("Battle created! Looking for ID...");
 
-            // Look for the most recent battle in "Waiting" state
-            const recentBattle = battlesData?.find(battle => battle.status === 'Waiting');
-            
-            if (recentBattle) {
-              console.log('Battle found:', recentBattle);
-              return recentBattle.battle_id;
+          // Function to try to find the battle
+          const findBattle = async (retries = 5): Promise<number | null> => {
+            for (let i = 0; i < retries; i++) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              console.log(`\nAttempt ${i + 1}: Looking for battles with amount:`, amountInWei);
+              const battlesData = await fetchAvailableBattles(amountInWei);
+              console.log('Battles found:', battlesData);
+
+              // Look for the most recent battle in "Waiting" state
+              const recentBattle = battlesData?.find(battle => battle.status === 'Waiting');
+              
+              if (recentBattle) {
+                console.log('Battle found:', recentBattle);
+                return recentBattle.battle_id;
+              }
+              
+              setRedirectMessage(`Looking for battle... (attempt ${i + 1}/${retries})`);
             }
-            
-            setRedirectMessage(`Looking for battle... (attempt ${i + 1}/${retries})`);
+            return null;
+          };
+
+          // Try to find the battle with retries
+          const battleId = await findBattle();
+
+          if (battleId) {
+            setRedirectMessage("Battle found! Redirecting...");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            navigate(`/BattleArena/${battleId}`);
+          } else {
+            throw new Error(
+              "Could not find the created battle. Please:\n\n" +
+              "1. Verify that the transaction has been confirmed in the explorer\n" +
+              "2. Check the console for search details\n" +
+              "3. Try refreshing the page in a few moments"
+            );
           }
-          return null;
-        };
-
-        // Try to find the battle with retries
-        const battleId = await findBattle();
-
-        if (battleId) {
-          setRedirectMessage("Battle found! Redirecting...");
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          navigate(`/BattleArena/${battleId}`);
-        } else {
-          throw new Error(
-            "Could not find the created battle. Please:\n\n" +
-            "1. Verify that the transaction has been confirmed in the explorer\n" +
-            "2. Check the console for search details\n" +
-            "3. Try refreshing the page in a few moments"
-          );
         }
       }
 
     } catch (error: any) {
       setIsRedirecting(false);
-      console.error("Detailed error when creating the battle:", {
+      console.error("Detailed error:", {
         error,
         message: error?.message,
         code: error?.code,
         stack: error?.stack
       });
 
-      let errorMessage = "Error creating the battle: ";
+      let errorMessage = "Error occurred: ";
       
       if (error instanceof Error) {
         if (error.message.includes("Max fee") && error.message.includes("exceeds balance")) {
