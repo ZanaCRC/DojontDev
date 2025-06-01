@@ -11,8 +11,8 @@ import { AppRoutes } from './routes'
 
 import './index.css'
 
-async function main() {
-  const sdk = await init<SchemaType>({
+function initApp() {
+  init<SchemaType>({
     client: {
       toriiUrl: dojoConfig.toriiUrl,
       relayUrl: dojoConfig.relayUrl,
@@ -24,25 +24,25 @@ async function main() {
       chainId: "SN_SEPOLIA",
       revision: "1",
     }
+  }).then(sdk => {
+    createRoot(document.getElementById('root')!).render(
+      <StrictMode>
+        <DojoSdkProvider
+          sdk={sdk}
+          dojoConfig={dojoConfig}
+          clientFn={setupWorld}>
+          <StarknetProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </StarknetProvider>
+        </DojoSdkProvider>
+      </StrictMode>,
+    )
+  }).catch((error) => {
+    console.error("App initialization failed:", error);
   });
-
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <DojoSdkProvider
-        sdk={sdk}
-        dojoConfig={dojoConfig}
-        clientFn={setupWorld}>
-        <StarknetProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </StarknetProvider>
-      </DojoSdkProvider>
-    </StrictMode>,
-  )
 }
 
-main().catch((error) => {
-  console.error("App initialization failed:", error);
-});
+initApp();
 
