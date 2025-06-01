@@ -22,7 +22,7 @@ export function BattleLauncher({ amount }: BattleLauncherProps) {
   const { execute: createPlayer, submitted } = useCreatePlayer();
   const { battles, loading: loadingBattles, fetchAvailableBattles, joinBattle } = useJoinBattle();
   const [usernames, setUsernames] = useState<Map<string, string>>(new Map());
-  const { execute: executeEthTransfer, submitted: ethSubmitted } = useEthApproval();
+  const { execute: executeEthTransfer } = useEthApproval();
 
   // Convertir el amount a wei en formato hexadecimal
   const amountInWei = amount 
