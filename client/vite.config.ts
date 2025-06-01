@@ -11,4 +11,17 @@ export default defineConfig({
   server: {
     allowedHosts: ['dojontapp.ticocr.org'],
   },
+  build: {
+    target: 'esnext',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'esnext',
+    },
+  },
 })
