@@ -4,7 +4,7 @@ import right_player from '../assets/Player2_Right.png';
 import { usePerformAction } from '../hooks/usePerformAction';
 import { useAccount } from '@starknet-react/core';
 import { lookupAddresses } from '@cartridge/controller';
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 // Definir los keyframes y clases de animación
 const floatingAnimation = `
@@ -118,7 +118,6 @@ const DamageNumber = ({ damage, position }: { damage: number, position: 'left' |
 
 export const BattleArena = () => {
   const { battleId } = useParams();
-  const location = useLocation();
   const { account } = useAccount();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const attackSoundRef = useRef<HTMLAudioElement | null>(null);

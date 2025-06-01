@@ -10,7 +10,5 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), wasm(), mkcert()],
   server: {
     allowedHosts: ['dojontapp.ticocr.org'],
-    key: fs.readFileSync('localhost-key.pem'),
-    cert: fs.readFileSync('localhost.pem'),
   },
 })
