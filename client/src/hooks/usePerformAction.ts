@@ -5,12 +5,6 @@ import type { BigNumberish } from 'starknet'
 const { VITE_BATTLE_CONTRACT_ADDRESS, VITE_TORII_URL } = import.meta.env;
 
 // Types
-interface PlayerNode {
-  player: string;
-  health: number;
-  in_battle: number;
-  bet_amount: string;
-}
 
 interface BattleNode {
   battle_id: number;
@@ -49,20 +43,6 @@ const BATTLE_QUERY = `
   }
 `;
 
-const PLAYER_QUERY = `
-  query GetPlayer($playerAddress: String!) {
-    dojontdevPlayerModels(where: { player: { eq: $playerAddress } }) {
-      edges {
-        node {
-          player
-          health
-          in_battle
-          bet_amount
-        }
-      }
-    }
-  }
-`;
 
 export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     const [battleState, setBattleState] = useState<BattleState>({
@@ -74,7 +54,7 @@ export const usePerformAction = ({ battleId }: UsePerformActionProps) => {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [txnHash, setTxnHash] = useState<string>();
-    const [currentTurn, setCurrentTurn] = useState<string | null>(null);
+    const [currentTurn] = useState<string | null>(null);
     const { account } = useAccount();
 
     const fetchPlayerHealth = async (address: string): Promise<number> => {

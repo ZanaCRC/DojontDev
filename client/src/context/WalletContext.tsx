@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { AccountInterface, Account } from 'starknet';
+import { AccountInterface } from 'starknet';
 
 // Interfaz personalizada para nuestra cuenta
 interface CustomAccount extends Partial<AccountInterface> {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import left_player from '../assets/Player1_Left.png';
 import right_player from '../assets/Player2_Right.png';
 import { usePerformAction } from '../hooks/usePerformAction';

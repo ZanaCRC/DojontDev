@@ -29,7 +29,6 @@ export function BattleView() {
       hasAccount: Boolean(account),
       accountDetails: account ? {
         address: account.address,
-        hasProvider: Boolean(account.provider),
         hasSigner: Boolean(account.signer)
       } : null,
       walletConnection: {
