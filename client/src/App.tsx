@@ -1,22 +1,21 @@
 // src/App.tsx
-import { InjectedConnector, jsonRpcProvider } from '@starknet-react/core';
+
 
 import { ConnectWallet } from './components/Cartridge/WalletConnection';
 
 import { Hero } from './components/Hero';
 import { Header } from './components/Header';
-import { useDojo } from './hooks/useDojo';
+
 
 import { MarqueeDemo } from './components/MarqueeLogos';
 import { MorphingText } from './components/ShadcnComponents/MorphingText';
-import { useWallet } from './context/WalletContext';
 import { AnimatedGridPattern } from './components/ShadcnComponents/AnimatedGrid';
 import { BorderBeamCard } from './components/AboutDojont';
 import { cn } from './lib/utils';
 import { HowOperate } from './components/HowOperate';
 import { FooterDojont } from './components/FooterDojont';
 const AppContent = () => {
-  const { walletConnection } = useWallet();
+
 
   return (
     <>

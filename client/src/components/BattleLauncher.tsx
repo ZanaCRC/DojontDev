@@ -1,11 +1,6 @@
 // src/components/BattleLauncher.tsx
 import { useState, useEffect } from "react";
-import { useDojo } from "../hooks/useDojo";
-import { useWallet } from "../context/WalletContext";
-
 import type { BigNumberish } from "starknet";
-import { useConnect } from '@starknet-react/core';
-import ControllerConnector from '@cartridge/connector/controller';
 import { useCreatePlayer } from "../hooks/useCreatePlayer";
 import { useJoinBattle } from "../hooks/useJoinBattle";
 import { lookupAddresses } from '@cartridge/controller';
