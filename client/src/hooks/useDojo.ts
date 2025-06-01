@@ -1,4 +1,4 @@
-import { AccountInterface } from "starknet";
+
 import type { BigNumberish, Call } from "starknet";
 import manifest from "../json/manifest_sepolia.json";
 import { DojoProvider } from "@dojoengine/core";

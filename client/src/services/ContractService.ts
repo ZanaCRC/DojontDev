@@ -4,13 +4,12 @@ import BattleAbi from '../abi/Battle.json';
 import TurnBattlesAbi from '../abi/TurnBattles.json';
 
 export class ContractService {
-  private provider: any;
+  
   private account: any | null;
   private battleContract: Contract;
   private turnBattlesContract: Contract;
 
   constructor(provider: any, account: any | null = null) {
-    this.provider = provider;
     this.account = account;
     
     // Inicializar contratos con sus direcciones correspondientes

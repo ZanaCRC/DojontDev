@@ -4,8 +4,8 @@ import { init } from "@dojoengine/sdk";
 import type { SchemaType } from "./typescript/models.gen";
 import { dojoConfig } from "./dojoConfig";
 
-export const initDojoClient = async () => {
-    const db = await init<SchemaType>({
+export const initDojoClient = () => {
+    return init<SchemaType>({
         client: {
             toriiUrl: dojoConfig.toriiUrl, // https://api.cartridge.gg/x/dojontdev/torii
             relayUrl: dojoConfig.relayUrl, // https://api.cartridge.gg/x/dojontdev/torii
@@ -19,8 +19,6 @@ export const initDojoClient = async () => {
             version: "1.5.0",              // From Dojo version in Scarb.toml
         },
     });
-
-    return db;
 };
 
 // Funciones para escuchar updates específicos

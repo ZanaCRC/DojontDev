@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAccount, useDisconnect } from '@starknet-react/core';
 import { Button } from '@cartridge/ui-next';
 import HeaderLogo from '../assets/DojontLogo.svg'
+import { Particles } from '../components/ShadcnComponents/Particles';
 const AMOUNTS = [
   { value: '0.001', label: '0.001 ETH' },
   { value: '0.005', label: '0.005 ETH' },
@@ -28,7 +29,6 @@ export function BattleView() {
       hasAccount: Boolean(account),
       accountDetails: account ? {
         address: account.address,
-        hasProvider: Boolean(account.provider),
         hasSigner: Boolean(account.signer)
       } : null,
       walletConnection: {
@@ -117,6 +117,12 @@ export function BattleView() {
 
   return (
     <div className="min-h-screen bg-black py-8">
+      <Particles 
+      className="absolute inset-0 z-0"
+      quantity={200}
+      ease={20}
+      color="#4F7CEC"
+      refresh/>
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="flex justify-between items-center bg-gradient-to-r from-[#4F7CEC]/10 to-[#9c40ff]/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-[#4F7CEC]/20 transition-all duration-300 hover:bg-gray-50/[.05]">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-[#4F7CEC] to-[#9c40ff] text-transparent bg-clip-text min-h-12">

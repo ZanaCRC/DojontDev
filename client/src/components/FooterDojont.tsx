@@ -29,7 +29,7 @@ export const FooterDojont = () => {
               </li>
 
               <li>
-                <Link to="/about" className="text-gray-400 hover:text-[#4F7CEC] transition-colors">
+                <Link to="/AboutDojont" className="text-gray-400 hover:text-[#4F7CEC] transition-colors">
                   About Us
                 </Link>
               </li>
@@ -41,7 +41,7 @@ export const FooterDojont = () => {
             <h4 className="text-lg font-semibold text-[#4F7CEC]">Connect With Us</h4>
             <div className="flex space-x-4">
               <a
-                href="https://twitter.com"
+                href="https://x.com/DojontDev"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-gray-50/[.05] hover:bg-[#4F7CEC]/10 flex items-center justify-center text-gray-400 hover:text-[#4F7CEC] transition-all"
@@ -61,7 +61,7 @@ export const FooterDojont = () => {
                 </svg>
               </a>
               <a
-                href="https://github.com"
+                href="https://github.com/ZanaCRC/DojontDev"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-gray-50/[.05] hover:bg-[#4F7CEC]/10 flex items-center justify-center text-gray-400 hover:text-[#4F7CEC] transition-all"

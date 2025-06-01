@@ -1,22 +1,21 @@
 // src/App.tsx
-import { StarknetConfig, InjectedConnector, jsonRpcProvider } from '@starknet-react/core';
-import { BattleLauncher } from './components/BattleLauncher';
+
+
 import { ConnectWallet } from './components/Cartridge/WalletConnection';
-import { sepolia } from '@starknet-react/chains';
+
 import { Hero } from './components/Hero';
 import { Header } from './components/Header';
-import { useDojo } from './hooks/useDojo';
-import { WalletProvider } from './context/WalletContext';
+
+
 import { MarqueeDemo } from './components/MarqueeLogos';
 import { MorphingText } from './components/ShadcnComponents/MorphingText';
-import { useWallet } from './context/WalletContext';
 import { AnimatedGridPattern } from './components/ShadcnComponents/AnimatedGrid';
 import { BorderBeamCard } from './components/AboutDojont';
 import { cn } from './lib/utils';
 import { HowOperate } from './components/HowOperate';
 import { FooterDojont } from './components/FooterDojont';
 const AppContent = () => {
-  const { walletConnection } = useWallet();
+
 
   return (
     <>
@@ -58,19 +57,7 @@ const AppContent = () => {
 };
 
 export function App() {
-  const dojoContext = useDojo();
   
-  const connectors = [
-    new InjectedConnector({ options: { id: 'braavos' }}),
-    new InjectedConnector({ options: { id: 'argentX' }})
-  ];
-
-  const provider = jsonRpcProvider({
-    rpc: () => ({
-      nodeUrl: dojoContext.config.rpcUrl
-    })
-  });
-
   return (
     
 
