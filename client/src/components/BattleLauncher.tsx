@@ -1,19 +1,12 @@
 // src/components/BattleLauncher.tsx
 import { useState, useEffect } from "react";
-import { useDojo } from "../hooks/useDojo";
-import { useWallet } from "../context/WalletContext";
-import { BattleActions } from "./BattleActions";
 import type { BigNumberish } from "starknet";
-import { useConnect } from '@starknet-react/core';
-import ControllerConnector from '@cartridge/connector/controller';
 import { useCreatePlayer } from "../hooks/useCreatePlayer";
 import { useJoinBattle } from "../hooks/useJoinBattle";
 import { lookupAddresses } from '@cartridge/controller';
 import { useNavigate } from 'react-router-dom';
-import { BattleArena } from "./BattleArena";
 import { useEthApproval } from "../hooks/useEthApproval";
 
-const { VITE_BATTLE_CONTRACT_ADDRESS } = import.meta.env;
 
 interface BattleLauncherProps {
   amount: string;
@@ -21,15 +14,11 @@ interface BattleLauncherProps {
 
 export function BattleLauncher({ amount }: BattleLauncherProps) {
   const navigate = useNavigate();
-  const { walletConnection } = useWallet();
-  const [selectedBattleId, setSelectedBattleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
-  const { setup } = useDojo();
-  const { connectors } = useConnect();
-  const controller = connectors[0] as ControllerConnector;
+ 
   const { execute: createPlayer, submitted } = useCreatePlayer();
   const { battles, loading: loadingBattles, fetchAvailableBattles, joinBattle } = useJoinBattle();
   const [usernames, setUsernames] = useState<Map<string, string>>(new Map());
