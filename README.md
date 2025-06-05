@@ -42,7 +42,13 @@ A simple turn-based PvP game built with the [Dojo framework](https://dojoengine.
 
 ## 🚀 Running on Sepolia (SN_SEPOLIA)
 
-The world is already deployed on Sepolia. To run the frontend:
+🌍 The world is already deployed on **Sepolia**  
+🖥️ The frontend is live on **Vercel**:
+
+🔗 [https://dojont-dev.vercel.app](https://dojont-dev.vercel.app)
+
+
+
 
 ## 🌐 Frontend Setup with HTTPS
 
